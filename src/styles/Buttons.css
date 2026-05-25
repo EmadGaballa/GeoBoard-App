@@ -3,17 +3,110 @@
    ====================================================== */
 
 .btn-primary {
-  @apply px-6 py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-black font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer shadow-lg hover:shadow-cyan-500/50;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(to right, #06b6d4, #0891b2);
+  color: #000;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+
+  transition:
+    background 0.3s ease,
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(to right, #22d3ee, #06b6d4);
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+}
+
+.btn-primary:active {
+  transform: scale(0.95);
 }
 
 .btn-secondary {
-  @apply px-6 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer shadow-lg hover:shadow-purple-500/50;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(to right, #9333ea, #7e22ce);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+
+  transition:
+    background 0.3s ease,
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(to right, #a855f7, #9333ea);
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+}
+
+.btn-secondary:active {
+  transform: scale(0.95);
 }
 
 .btn-tertiary {
-  @apply px-6 py-3 rounded-lg glass hover:bg-white/10 text-white font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+
+  /* glass */
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  transition:
+    background 0.3s ease,
+    transform 0.3s ease;
+}
+
+.btn-tertiary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
+.btn-tertiary:active {
+  transform: scale(0.95);
 }
 
 .btn-icon {
-  @apply p-2 rounded-lg glass hover:bg-white/20 text-white transition-all duration-300 transform hover:scale-110 active:scale-95 cursor-pointer;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+
+  /* glass */
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  color: #fff;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  transition:
+    background 0.3s ease,
+    transform 0.3s ease;
+}
+
+.btn-icon:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.btn-icon:active {
+  transform: scale(0.95);
 }

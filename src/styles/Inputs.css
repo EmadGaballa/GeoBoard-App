@@ -3,9 +3,28 @@
    ====================================================== */
 
 .input-field {
-  @apply w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 transition-all duration-300 focus:outline-none focus:border-cyan-500/50 focus:bg-white/10 focus:shadow-lg focus:shadow-cyan-500/20;
+  width: 100%;
+  padding: 0.75rem 1rem;
+
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+
+  color: #fff;
+
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: rgba(6, 182, 212, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
 }
 
 .input-field::placeholder {
-  @apply text-gray-600;
+  color: #4b5563;
 }

@@ -1,16 +1,15 @@
-
 /* ======================================================
    TRANSITIONS & EFFECTS
    ====================================================== */
 
 .transition-all {
-  @apply transition-all duration-300;
+  transition: all 0.3s ease;
 }
 
 .transition-fast {
-  @apply transition-all duration-150;
+  transition: all 0.15s ease;
 }
 
 .transition-slow {
-  @apply transition-all duration-500;
+  transition: all 0.5s ease;
 }

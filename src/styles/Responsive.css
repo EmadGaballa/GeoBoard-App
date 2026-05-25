@@ -4,20 +4,20 @@
 
 @media (max-width: 768px) {
   .hide-on-mobile {
-    @apply hidden;
+    display: none;
   }
-  
+
   .show-on-mobile {
-    @apply block;
+    display: block;
   }
 }
 
 @media (min-width: 769px) {
   .hide-on-desktop {
-    @apply hidden;
+    display: none;
   }
-  
+
   .show-on-desktop {
-    @apply block;
+    display: block;
   }
 }
