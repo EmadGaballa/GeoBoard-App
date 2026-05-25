@@ -765,3 +765,99 @@
     font-size: 0.55rem;
   }
 }
+
+/* ── Append these rules to your existing News.css ─────────────── */
+
+/* Search clear button */
+.news-search-clear {
+  position: absolute;
+  right: 2.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: rgba(160, 165, 180, 0.55);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: color 0.2s;
+}
+.news-search-clear:hover { color: rgba(200, 205, 220, 0.85); }
+
+/* Spinner shown while search API call is in flight */
+.news-search-spinner {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(160, 165, 180, 0.2);
+  border-top-color: rgba(160, 165, 180, 0.7);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+/* Active search label / back button */
+.news-search-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: rgba(160, 165, 180, 0.6);
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.news-search-label strong { color: rgba(200, 205, 220, 0.85); }
+.news-search-label-clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  color: rgba(120, 180, 255, 0.7);
+  padding: 0;
+  transition: color 0.2s;
+}
+.news-search-label-clear:hover { color: rgba(120, 180, 255, 1); }
+
+/* Loading state */
+.news-loading {
+  padding: 2rem 0;
+}
+.news-loading-text {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  color: rgba(160, 165, 180, 0.4);
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+/* Skeleton cards */
+.news-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+.news-skeleton-card {
+  height: 260px;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.03) 25%,
+    rgba(255,255,255,0.07) 50%,
+    rgba(255,255,255,0.03) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

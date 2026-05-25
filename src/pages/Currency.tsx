@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
-// useRef is used for fetchIdRef (race-condition guard) and amountInputRef
 import { motion, AnimatePresence } from 'framer-motion'
 import { fetchCurrencyRates } from '../services/api/currency'
 import '../styles/Currency.css'
@@ -18,15 +17,13 @@ interface WatchlistEntry {
   name: string
   flag: string
   rate: number | null
-  change: number | null  // mock %, for visual flair
+  change: number | null
 }
 
 // ======================================================
 // CONSTANTS
 // ======================================================
 
-// FIX: original code referenced undefined `CURRENCIES` flat array.
-// Built from CURRENCY_GROUPS for correct <optgroup> rendering.
 const CURRENCY_GROUPS = [
   {
     label: 'Global Majors',
@@ -91,7 +88,6 @@ const CURRENCY_GROUPS = [
   },
 ]
 
-// Flat list for internal lookups
 const ALL_CURRENCIES = CURRENCY_GROUPS.flatMap(g => g.currencies)
 
 const CURRENCY_FLAGS: Record<string, string> = {
@@ -106,7 +102,6 @@ const CURRENCY_FLAGS: Record<string, string> = {
 }
 
 const QUICK_AMOUNTS = [1, 10, 100, 1000, 10000]
-
 const WATCHLIST_CODES = ['EGP', 'SAR', 'AED', 'QAR', 'KWD', 'BHD']
 
 // ======================================================
@@ -122,7 +117,6 @@ function getFlag(code: string): string {
 }
 
 function fmtRate(rate: number, to: string): string {
-  // High-value currencies (JPY, KRW, IDR, VND) need more decimals
   const highVolume = ['JPY', 'KRW', 'IDR', 'VND', 'HUF', 'CZK', 'DZD', 'EGP', 'LBP', 'TND']
   const decimals = highVolume.includes(to) ? 2 : 4
   return rate.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
@@ -142,7 +136,6 @@ const Sparkline: React.FC<{ seed: string }> = ({ seed }) => {
   const points = useMemo(() => {
     let v = 50
     const pts: number[] = []
-    // deterministic pseudo-random from seed string
     let h = seed.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0)
     for (let i = 0; i < 30; i++) {
       h = ((h * 1664525 + 1013904223) | 0) >>> 0
@@ -206,38 +199,39 @@ export const Currency: React.FC = () => {
   const [lastUpdated,  setLastUpdated]  = useState<string | null>(null)
   const [watchlistRates, setWatchlistRates] = useState<Record<string, number>>({})
 
-  const amountInputRef = useRef<HTMLInputElement>(null)
   // Tracks the in-flight fetch so a currency change mid-request doesn't clobber new results
   const fetchIdRef = useRef(0)
 
   const result = rate > 0 ? amount * rate : 0
 
-  // ── Core fetch — reactive to fromCurrency / toCurrency ──
-  // Defined outside useCallback so it never goes stale; called by the effect below
-  // and by the manual "Get Live Rate" button.
+  // ── Core fetch — called by the effect and the manual refresh button ──
   const doFetch = useCallback(async (from: string, to: string) => {
     const id = ++fetchIdRef.current
     setLoading(true)
     setError(null)
 
     try {
+      // fetchCurrencyRates now hits the fawazahmed0 free API with CF fallback
       const rates: CurrencyRate[] = await fetchCurrencyRates(from)
 
-      // Discard if a newer fetch has already started
       if (id !== fetchIdRef.current) return
 
-      const found = rates.find(r => r.code === to)
+      // FIX: the new API returns codes in lowercase — find case-insensitively
+      const found = rates.find(r => r.code.toUpperCase() === to.toUpperCase())
       if (found) {
         setRate(found.rate)
-        setLastUpdated(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }))
+        setLastUpdated(
+          new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        )
       } else {
         setError(`Rate for ${to} not available`)
+        setRate(0)
       }
 
-      // Populate entire watchlist from the same response — no extra request needed
+      // Populate watchlist from the same single response — no extra request
       const next: Record<string, number> = {}
       WATCHLIST_CODES.forEach(code => {
-        const r = rates.find(r => r.code === code)
+        const r = rates.find(r => r.code.toUpperCase() === code)
         if (r) next[code] = r.rate
       })
       setWatchlistRates(next)
@@ -246,6 +240,7 @@ export const Currency: React.FC = () => {
       if (id !== fetchIdRef.current) return
       console.error('Currency fetch error:', err)
       setError('Failed to fetch exchange rates. Please try again.')
+      setRate(0)
     } finally {
       if (id === fetchIdRef.current) setLoading(false)
     }
@@ -261,22 +256,24 @@ export const Currency: React.FC = () => {
     doFetch(fromCurrency, toCurrency)
   }, [fromCurrency, toCurrency, doFetch])
 
-  // ── Swap — invert stored rate instantly, then let the effect re-fetch ──
+  // ── Swap — FIX: don't try to invert a stale local rate.
+  //    Just flip the currency selectors; the useEffect will re-fetch the real rate.
   const handleSwap = useCallback(() => {
-    setRate(prev => prev > 0 ? parseFloat((1 / prev).toFixed(6)) : 0)
+    setRate(0)  // clear stale rate so UI shows "—" while fetching
     setFromCurrency(toCurrency)
     setToCurrency(fromCurrency)
   }, [fromCurrency, toCurrency])
 
-  // ── Watchlist click → switch toCurrency; effect auto-fetches ──
+  // ── Watchlist click → switch toCurrency ──
   const handleWatchlistClick = useCallback((code: string) => {
     setToCurrency(code)
-    // Show cached rate immediately while the effect re-fetches in background
-    setRate(watchlistRates[code] ?? 0)
+    // Optimistically show cached watchlist rate while the effect re-fetches
+    const cached = watchlistRates[code]
+    if (cached !== undefined) setRate(cached)
+    else setRate(0)
   }, [watchlistRates])
 
-  // Hero stats
-  const pairLabel = `${fromCurrency} / ${toCurrency}`
+  const pairLabel   = `${fromCurrency} / ${toCurrency}`
   const rateDisplay = rate > 0 ? fmtRate(rate, toCurrency) : '—'
 
   // ── Watchlist entries ──
@@ -286,7 +283,6 @@ export const Currency: React.FC = () => {
       name: getCurrencyName(code),
       flag: getFlag(code),
       rate: watchlistRates[code] ?? null,
-      // Deterministic mock change for visual interest
       change: ((i * 37 + code.charCodeAt(0)) % 21) - 10,
     })),
     [watchlistRates]
@@ -376,7 +372,10 @@ export const Currency: React.FC = () => {
                   <select
                     className="fx-select"
                     value={fromCurrency}
-                    onChange={e => { setFromCurrency(e.target.value); setRate(0) }}
+                    onChange={e => {
+                      setRate(0)
+                      setFromCurrency(e.target.value)
+                    }}
                     aria-label="From currency"
                   >
                     {CURRENCY_GROUPS.map(group => (
@@ -444,7 +443,10 @@ export const Currency: React.FC = () => {
                   <select
                     className="fx-select"
                     value={toCurrency}
-                    onChange={e => { setToCurrency(e.target.value); setRate(0) }}
+                    onChange={e => {
+                      setRate(0)
+                      setToCurrency(e.target.value)
+                    }}
                     aria-label="To currency"
                   >
                     {CURRENCY_GROUPS.map(group => (
@@ -534,11 +536,7 @@ export const Currency: React.FC = () => {
               GCC Watchlist
             </div>
 
-            <motion.div
-              variants={stagger}
-              initial="hidden"
-              animate="show"
-            >
+            <motion.div variants={stagger} initial="hidden" animate="show">
               {watchlistEntries.map(entry => (
                 <motion.div
                   key={entry.code}
