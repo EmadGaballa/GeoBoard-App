@@ -1,0 +1,152 @@
+// ======================================================
+// GEOBOARD — PRISMA DATABASE SCHEMA
+// Production-grade PostgreSQL schema
+// ======================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ======================================================
+// USERS
+// ======================================================
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  avatar    String?
+  provider  String   @default("google") // "google" | "email"
+  providerId String? @unique // Google sub ID
+  password  String?  // null for OAuth users
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  sessions        Session[]
+  locations       Location[]
+  savedLocations  SavedLocation[]
+  preferences     UserPreference?
+  dashboardConfig DashboardConfig?
+  analytics       Analytics[]
+
+  @@index([email])
+  @@index([provider, providerId])
+  @@map("users")
+}
+
+// ======================================================
+// SESSIONS
+// ======================================================
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  lastUsed  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// ======================================================
+// LOCATIONS
+// ======================================================
+model Location {
+  id        String   @id @default(uuid())
+  userId    String
+  city      String
+  country   String
+  latitude  Float
+  longitude Float
+  source    String   @default("gps") // "gps" | "ip" | "manual" | "map"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isActive])
+  @@map("locations")
+}
+
+// ======================================================
+// SAVED LOCATIONS
+// ======================================================
+model SavedLocation {
+  id        String   @id @default(uuid())
+  userId    String
+  city      String
+  country   String
+  latitude  Float
+  longitude Float
+  label     String?  // e.g. "Home", "Office"
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, city, country])
+  @@index([userId])
+  @@map("saved_locations")
+}
+
+// ======================================================
+// USER PREFERENCES
+// ======================================================
+model UserPreference {
+  id               String  @id @default(uuid())
+  userId           String  @unique
+  temperatureUnit  String  @default("celsius") // "celsius" | "fahrenheit"
+  newsCategories   String  @default("[\"tech\",\"world\"]") // JSON array
+  currencyBase     String  @default("USD")
+  timeFormat       String  @default("24h") // "12h" | "24h"
+  theme            String  @default("dark")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+// ======================================================
+// DASHBOARD CONFIG
+// ======================================================
+model DashboardConfig {
+  id              String  @id @default(uuid())
+  userId          String  @unique
+  widgets         String  @default("[\"weather\",\"news\",\"currency\",\"clock\",\"location\"]") // JSON array
+  layout          String  @default("grid")
+  defaultLocation String? // city name
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("dashboard_config")
+}
+
+// ======================================================
+// ANALYTICS
+// ======================================================
+model Analytics {
+  id        String   @id @default(uuid())
+  userId    String
+  event     String   // "weather_fetch" | "news_fetch" | "currency_fetch" | "location_change"
+  metadata  String?  // JSON string with additional context
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, event])
+  @@index([createdAt])
+  @@map("analytics")
+}
