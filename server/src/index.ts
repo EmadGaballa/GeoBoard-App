@@ -13,6 +13,10 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
 import { getCache } from './cache/index.js'
 import { jobService } from './jobs/job.service.js'
 import { analyticsService } from './analytics/analytics.service.js'
+import usersRoutes from './users/users.routes.js'
+
+// ── Validate Configuration BEFORE any imports that depend on it ──
+validateConfig()
 
 // ── Route Imports ──────────────────────────────────────
 import authRoutes from './auth/auth.routes.js'
@@ -23,9 +27,6 @@ import currencyRoutes from './currency/currency.routes.js'
 import dashboardRoutes from './dashboard/dashboard.routes.js'
 import analyticsRoutes from './analytics/analytics.routes.js'
 
-// ── Validate Environment ──────────────────────────────
-validateConfig()
-
 // ── Initialize Express ─────────────────────────────────
 const app = express()
 
@@ -35,10 +36,22 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }))
 
+const allowedOrigins = [
+  config.server.frontendUrl,
+  'http://localhost:3000',
+  'http://localhost:5173',
+]
+
 app.use(cors({
-  origin: config.server.frontendUrl,
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }))
 
@@ -59,6 +72,7 @@ const limiter = rateLimit({
 
 app.use('/api', limiter)
 
+
 // ── Request Timing & Analytics Middleware ──────────────
 app.use((req, _res, next) => {
   const start = Date.now()
@@ -75,7 +89,7 @@ app.use((req, _res, next) => {
         status: _res.statusCode,
       }).catch(() => {})
     }
-    return originalEnd.apply(this, args)
+    return originalEnd.apply(_res, args)
   } as typeof originalEnd
   next()
 })
@@ -105,6 +119,7 @@ app.use('/api/news', newsRoutes)
 app.use('/api/currency', currencyRoutes)
 app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/analytics', analyticsRoutes)
+app.use('/api/users', usersRoutes)
 
 // ── Error Handling ────────────────────────────────────
 app.use(notFoundHandler)

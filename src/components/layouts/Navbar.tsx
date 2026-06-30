@@ -1,16 +1,14 @@
 import React, { useContext, useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Menu, X } from 'lucide-react'
+import { Menu, LogOut, User } from 'lucide-react'
 
 import { LocationContext } from '../../App'
+import { useAuth } from '../../contexts/AuthContext'
 import { NavbarProps } from '../../services/types'
+import { AvatarDisplay } from '../../constants/avatars'
 
 import '../../styles/Navbar.css'
-
-// ======================================================
-// COMPONENT: Navbar
-// ======================================================
 
 const NAV_LINKS = [
   {
@@ -55,10 +53,6 @@ const NAV_LINKS = [
   },
 ]
 
-// ======================================================
-// SUB-COMPONENT: LogoRings
-// ======================================================
-
 const LogoRings: React.FC = () => (
   <div className="navbar-logo-ring" aria-hidden="true">
     <svg viewBox="0 0 36 36" fill="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
@@ -95,27 +89,19 @@ const LogoRings: React.FC = () => (
   </div>
 )
 
-// ======================================================
-// SUB-COMPONENT: PulseDot
-// ======================================================
-
 const PulseDot: React.FC = () => (
   <div className="navbar-location-dot" aria-hidden="true" />
 )
-
-// ======================================================
-// MAIN EXPORT
-// ======================================================
 
 export const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
   const routerLocation = useLocation()
   const navigate = useNavigate()
   const locationData = useContext(LocationContext)
+  const { user, isAuthenticated, logout } = useAuth()
 
   const [currentTime, setCurrentTime] = useState('')
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false)
 
-  // Live clock
   useEffect(() => {
     const update = () => {
       setCurrentTime(
@@ -133,221 +119,158 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
     return () => clearInterval(id)
   }, [locationData?.timezone])
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileOpen(false)
-  }, [routerLocation.pathname])
-
-  // Prevent body scroll when mobile menu is open
-  useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => { document.body.style.overflow = '' }
-  }, [mobileOpen])
-
   const handleNavClick = (path: string) => {
     navigate(path)
-    setMobileOpen(false)
+  }
+
+  const handleLogout = async () => {
+    await logout()
+    setShowUserMenu(false)
+    navigate('/')
   }
 
   const isActive = (path: string) =>
     path === '/' ? routerLocation.pathname === '/' : routerLocation.pathname.startsWith(path)
 
   return (
-    <>
-      <nav className="navbar" role="banner">
+    <nav className="navbar" role="banner">
 
-        {/* Animated scanline sweep */}
-        <div className="navbar-scanline" aria-hidden="true" />
+      <div className="navbar-scanline" aria-hidden="true" />
 
-        <div className="navbar-container">
+      <div className="navbar-container">
 
-          {/* ── LEFT: Sidebar toggle (mobile only) + Brand + Location ── */}
-          <div className="navbar-left">
+        <div className="navbar-left">
 
-            {/*
-              Sidebar toggle — shown ONLY on mobile via CSS.
-              Calls the parent-provided onMenuClick to open the sidebar drawer.
-            */}
-            {onMenuClick && (
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={onMenuClick}
-                className="navbar-sidebar-toggle"
-                aria-label="Toggle sidebar"
-              >
-                <Menu size={18} strokeWidth={2} />
-              </motion.button>
-            )}
-
-            {/* Logo + wordmark */}
-            <button
-              className="navbar-logo"
-              onClick={() => navigate('/')}
-              aria-label="Go to dashboard home"
+          {onMenuClick && (
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={onMenuClick}
+              className="navbar-sidebar-toggle"
+              aria-label="Open navigation menu"
             >
-              <LogoRings />
-              <span className="navbar-title">GEOBOARD</span>
-            </button>
+              <Menu size={20} strokeWidth={2.2} />
+            </motion.button>
+          )}
 
-            <div className="navbar-divider" aria-hidden="true" />
+          <button
+            className="navbar-logo"
+            onClick={() => navigate('/')}
+            aria-label="Go to dashboard home"
+          >
+            <LogoRings />
+            <span className="navbar-title">GEOBOARD</span>
+          </button>
 
-            {/* Live location — hidden on small screens via CSS */}
-            {locationData && (
-              <div className="navbar-location">
-                <PulseDot />
-                <div className="navbar-location-text">
-                  <div className="navbar-location-city">{locationData.city}</div>
-                  <div className="navbar-location-country">
-                    {locationData.country}&nbsp;·&nbsp;
-                    {locationData.timezone?.split('/')[1]?.replace('_', ' ') ?? locationData.timezone}
-                  </div>
+          <div className="navbar-divider" aria-hidden="true" />
+
+          {locationData && (
+            <div className="navbar-location">
+              <PulseDot />
+              <div className="navbar-location-text">
+                <div className="navbar-location-city">{locationData.city}</div>
+                <div className="navbar-location-country">
+                  {locationData.country}&nbsp;·&nbsp;
+                  {locationData.timezone?.split('/')[1]?.replace('_', ' ') ?? locationData.timezone}
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-          </div>
-
-          {/* ── CENTER: Nav links — hidden below 960 px via CSS ── */}
-          <nav className="navbar-center" aria-label="Main navigation">
-            {NAV_LINKS.map(({ path, label, icon, badge }) => (
-              <button
-                key={path}
-                onClick={() => handleNavClick(path)}
-                className={`navbar-nav-link${isActive(path) ? ' active' : ''}`}
-                aria-current={isActive(path) ? 'page' : undefined}
-              >
-                {icon}
-                {label}
-                {badge && <span className="navbar-nav-badge">{badge}</span>}
-              </button>
-            ))}
-          </nav>
-
-          {/* ── RIGHT: Clock + Mobile hamburger ── */}
-          <div className="navbar-right">
-
-            {/* Live clock — hidden on small screens via CSS */}
-            {currentTime && (
-              <div className="navbar-time-wrapper" aria-live="off">
-                <div className="navbar-time">{currentTime}</div>
-                <div className="navbar-timezone">{locationData?.timezone ?? 'UTC'}</div>
-              </div>
-            )}
-
-            {/*
-              Mobile hamburger — shown ONLY on mobile (≤960px) via CSS.
-              Toggles the slide-down nav link list.
-            */}
-            <motion.button
-              whileTap={{ scale: 0.88 }}
-              className="navbar-hamburger"
-              onClick={() => setMobileOpen(v => !v)}
-              aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
-              aria-expanded={mobileOpen}
-              aria-controls="navbar-mobile-menu"
-            >
-              <AnimatePresence mode="wait" initial={false}>
-                {mobileOpen ? (
-                  <motion.span
-                    key="x"
-                    initial={{ rotate: -90, opacity: 0, scale: 0.7 }}
-                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                    exit={{ rotate: 90, opacity: 0, scale: 0.7 }}
-                    transition={{ duration: 0.2 }}
-                    style={{ display: 'flex' }}
-                  >
-                    <X size={20} strokeWidth={2.2} />
-                  </motion.span>
-                ) : (
-                  <motion.span
-                    key="m"
-                    initial={{ rotate: 90, opacity: 0, scale: 0.7 }}
-                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                    exit={{ rotate: -90, opacity: 0, scale: 0.7 }}
-                    transition={{ duration: 0.2 }}
-                    style={{ display: 'flex' }}
-                  >
-                    <Menu size={20} strokeWidth={2.2} />
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </motion.button>
-
-          </div>
         </div>
 
-        {/* Chromatic bottom edge line */}
-        <div className="navbar-bottom-line" aria-hidden="true" />
-      </nav>
-
-      {/* ── MOBILE SLIDE-DOWN MENU — rendered outside navbar to avoid overflow:hidden clipping ── */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              key="mobile-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="navbar-mobile-backdrop"
-              onClick={() => setMobileOpen(false)}
-              aria-hidden="true"
-            />
-
-            {/* Menu panel */}
-            <motion.div
-              id="navbar-mobile-menu"
-              key="mobile-menu"
-              initial={{ opacity: 0, y: -12, scaleY: 0.95 }}
-              animate={{ opacity: 1, y: 0, scaleY: 1 }}
-              exit={{ opacity: 0, y: -12, scaleY: 0.95 }}
-              transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-              className="navbar-mobile-menu"
-              role="navigation"
-              aria-label="Mobile navigation"
-              style={{ transformOrigin: 'top' }}
+        <nav className="navbar-center" aria-label="Main navigation">
+          {NAV_LINKS.map(({ path, label, icon, badge }) => (
+            <button
+              key={path}
+              onClick={() => handleNavClick(path)}
+              className={`navbar-nav-link${isActive(path) ? ' active' : ''}`}
+              aria-current={isActive(path) ? 'page' : undefined}
             >
-              <div className="navbar-mobile-inner">
-                {NAV_LINKS.map(({ path, label, icon, badge }, i) => (
-                  <motion.button
-                    key={path}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 + 0.05 }}
-                    onClick={() => handleNavClick(path)}
-                    className={`navbar-mobile-link${isActive(path) ? ' active' : ''}`}
-                    aria-current={isActive(path) ? 'page' : undefined}
-                  >
-                    <span className="navbar-mob-icon" aria-hidden="true">{icon}</span>
-                    <span>{label}</span>
-                    {badge && <span className="navbar-nav-badge navbar-mob-badge">{badge}</span>}
-                  </motion.button>
-                ))}
+              {icon}
+              {label}
+              {badge && <span className="navbar-nav-badge">{badge}</span>}
+            </button>
+          ))}
+        </nav>
 
-                <div className="navbar-mobile-sep" aria-hidden="true" />
+        <div className="navbar-right">
 
-                <div className="navbar-mobile-meta">
-                  {currentTime && (
-                    <span className="navbar-mobile-meta-time">{currentTime}</span>
-                  )}
-                  {locationData && (
-                    <span className="navbar-mobile-meta-loc">
-                      📍 {locationData.city}, {locationData.country}
-                    </span>
-                  )}
+          {isAuthenticated && user ? (
+            <div className="navbar-auth">
+              <motion.button
+                className="navbar-user-btn"
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <div className="navbar-user-avatar">
+                  <AvatarDisplay avatarId={user.avatar} size={32} />
                 </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </>
+                <span className="navbar-user-name">{user.name}</span>
+              </motion.button>
+
+              <AnimatePresence>
+                {showUserMenu && (
+                  <motion.div
+                    className="navbar-user-menu"
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  >
+                    <button
+                      className="navbar-user-menu-item"
+                      onClick={() => {
+                        setShowUserMenu(false)
+                        navigate('/settings')
+                      }}
+                    >
+                      <User size={16} />
+                      Settings
+                    </button>
+                    <button
+                      className="navbar-user-menu-item navbar-user-menu-item--logout"
+                      onClick={handleLogout}
+                    >
+                      <LogOut size={16} />
+                      Logout
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <div className="navbar-auth-buttons">
+              <motion.button
+                className="navbar-login-btn"
+                onClick={() => navigate('/login')}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Log In
+              </motion.button>
+              <motion.button
+                className="navbar-register-btn"
+                onClick={() => navigate('/register')}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Sign Up
+              </motion.button>
+            </div>
+          )}
+
+          {currentTime && (
+            <div className="navbar-time-wrapper" aria-live="off">
+              <div className="navbar-time">{currentTime}</div>
+              <div className="navbar-timezone">{locationData?.timezone ?? 'UTC'}</div>
+            </div>
+          )}
+
+        </div>
+      </div>
+
+      <div className="navbar-bottom-line" aria-hidden="true" />
+    </nav>
   )
 }
 

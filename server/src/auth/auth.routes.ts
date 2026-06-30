@@ -1,5 +1,5 @@
 // ======================================================
-// GEOBOARD — AUTH ROUTES
+// GEOBOARD — AUTH ROUTES (EMAIL/PASSWORD ONLY)
 // ======================================================
 
 import { Router } from 'express'
@@ -8,21 +8,38 @@ import { authenticate } from '../middleware/auth.js'
 
 const router = Router()
 
-// Google OAuth
-router.get('/google', (req, res, next) => authController.googleAuth(req, res, next))
-router.get('/google/callback', (req, res, next) => authController.googleCallback(req, res, next))
+console.log('[AuthRoutes] Auth routes initialized')
 
-// Email/Password
-router.post('/login', (req, res, next) => authController.login(req, res, next))
-router.post('/register', (req, res, next) => authController.register(req, res, next))
+// ─────────────────────────────────────────────
+// Email / Password Auth
+// ─────────────────────────────────────────────
+router.post('/register', authController.register)
+router.post('/login', authController.login)
 
-// Logout
-router.post('/logout', (req, res, next) => authController.logout(req, res, next))
+// ─────────────────────────────────────────────
+// Session Management
+// ─────────────────────────────────────────────
+router.post('/logout', authController.logout)
+router.get('/me', authenticate, authController.me)
 
-// Current user (requires auth)
-router.get('/me', authenticate, (req, res, next) => authController.me(req, res, next))
+// ─────────────────────────────────────────────
+// PROFILE UPDATE (🔥 ADD THIS HERE)
+// ─────────────────────────────────────────────
+router.patch('/profile', authenticate, authController.updateProfile)
 
-// Token validation
-router.post('/validate', (req, res, next) => authController.validate(req, res, next))
+
+// ─────────────────────────────────────────────
+// Token / Session Validation
+// ─────────────────────────────────────────────
+router.post('/validate', authController.validate)
+
+// ─────────────────────────────────────────────
+// Password Reset (Public routes)
+// ─────────────────────────────────────────────
+router.post('/forgot-password', authController.forgotPassword)
+router.post('/validate-reset-token', authController.validateResetToken)
+router.post('/reset-password', authController.resetPassword)
+
+console.log('[AuthRoutes] Password reset routes registered')
 
 export default router

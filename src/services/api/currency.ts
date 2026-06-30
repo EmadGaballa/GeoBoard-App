@@ -1,7 +1,5 @@
 // ======================================================
-// API SERVICE: CURRENCY
-// Uses: https://github.com/fawazahmed0/exchange-api (free, no key)
-// Fallback: Cloudflare Pages mirror
+// API SERVICE: CURRENCY — via backend proxy
 // ======================================================
 
 export interface CurrencyRate {
@@ -12,44 +10,21 @@ export interface CurrencyRate {
   name: string
 }
 
-const CDN_BASE   = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1'
-const CF_BASE    = 'https://latest.currency-api.pages.dev/v1'
+import { apiClient } from '../apiClient'
 
-// Fetch with automatic fallback to Cloudflare mirror
-async function fetchWithFallback(path: string): Promise<unknown> {
-  try {
-    const res = await fetch(`${CDN_BASE}${path}`)
-    if (!res.ok) throw new Error(`CDN ${res.status}`)
-    return res.json()
-  } catch {
-    const res = await fetch(`${CF_BASE}${path}`)
-    if (!res.ok) throw new Error(`CF ${res.status}`)
-    return res.json()
-  }
-}
+const API_BASE = '/api/currency'
 
 // ──────────────────────────────────────────────────────
 // PUBLIC: fetch all rates for a base currency
-// Response shape: { date: "2024-...", "usd": { eur: 0.92, egp: 48.9, ... } }
 // ──────────────────────────────────────────────────────
 export const fetchCurrencyRates = async (
   baseCurrency: string = 'USD'
 ): Promise<CurrencyRate[]> => {
-  const base = baseCurrency.toLowerCase()
   try {
-    const data = await fetchWithFallback(`/currencies/${base}.json`) as Record<string, unknown>
-
-    // The rates object lives under the base currency key
-    const ratesObj = data[base] as Record<string, number> | undefined
-    if (!ratesObj) throw new Error('Unexpected API shape')
-
-    return Object.entries(ratesObj).map(([code, rate]) => ({
-      code: code.toUpperCase(),
-      rate,
-      flag: getCurrencyFlag(code.toUpperCase()),
-      change: parseFloat((Math.random() * 4 - 2).toFixed(2)),
-      name: getCurrencyName(code.toUpperCase()),
-    }))
+    const response = await apiClient.get<{ success: boolean; data: CurrencyRate[] }>(
+      `${API_BASE}/rates?base=${encodeURIComponent(baseCurrency)}`
+    )
+    return response.data
   } catch (error) {
     console.error('Error fetching currency rates:', error)
     return getMockCurrencyRates()
@@ -65,25 +40,25 @@ export const convertCurrency = async (
   amount: number
 ): Promise<{ rate: number; result: number }> => {
   try {
-    const rates = await fetchCurrencyRates(fromCurrency)
-    const found = rates.find(r => r.code === toCurrency)
-    if (!found) throw new Error(`${toCurrency} not found`)
-    return { rate: found.rate, result: amount * found.rate }
+    const response = await apiClient.get<{ success: boolean; data: { rate: number; result: number } }>(
+      `${API_BASE}/convert?from=${encodeURIComponent(fromCurrency)}&to=${encodeURIComponent(toCurrency)}&amount=${amount}`
+    )
+    return response.data
   } catch (error) {
     console.error('Error converting currency:', error)
     const mock = getMockCurrencyRates()
-    const found = mock.find(r => r.code === toCurrency)
+    const found = mock.find(r => r.code === toCurrency.toUpperCase())
     const rate = found?.rate ?? 1
     return { rate, result: amount * rate }
   }
 }
 
 // ──────────────────────────────────────────────────────
-// PUBLIC: mock historical (API free tier doesn't support history)
+// PUBLIC: mock historical (kept for UI compatibility)
 // ──────────────────────────────────────────────────────
 export const getHistoricalRates = async (
   _baseCurrency: string,
-  _targetCurrency: string = 'EUR',
+  _targetCurrency: string,
   days: number = 30
 ): Promise<{ date: string; rate: number }[]> => {
   let baseRate = 1.0

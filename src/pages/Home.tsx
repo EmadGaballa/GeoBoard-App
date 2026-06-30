@@ -1,10 +1,11 @@
-import React, { useContext, useState, useEffect, useCallback, useRef } from 'react'
+import React, { useContext, useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { LocationContext } from '../App'
-import { fetchWeatherData, WeatherData } from '../services/api/weather'
-import { fetchNewsData, NewsArticle } from '../services/api/news'
-import { fetchCurrencyRates, CurrencyRate } from '../services/api/currency'
+import { fetchWeatherData } from '../services/api/weather'
+import { fetchNewsData } from '../services/api/news'
+import { fetchCurrencyRates } from '../services/api/currency'
+import type { WeatherData, NewsArticle, CurrencyRate } from '../services/types'
 
 import '../styles/Home.css'
 
@@ -18,7 +19,6 @@ type WeatherMood = 'clear' | 'cloudy' | 'rainy' | 'stormy'
 // CONSTANTS
 // ======================================================
 
-const CURRENCY_PAIRS = ['EUR', 'GBP', 'JPY', 'CHF', 'CAD']
 
 // ======================================================
 // HELPERS
@@ -237,8 +237,8 @@ const CurrencyCell: React.FC<{ rates: CurrencyRate[] }> = ({ rates }) => (
           const delta = (Math.random() * 0.4 - 0.2)
           const up = delta >= 0
           return (
-            <div key={r.currency ?? i} className="bento-currency-row">
-              <span className="bento-currency-pair">USD/{r.currency}</span>
+            <div key={r.code ?? i} className="bento-currency-row">
+              <span className="bento-currency-pair">USD/{r.code}</span>
               <span className="bento-currency-rate">{Number(r.rate).toFixed(4)}</span>
               <span className={`bento-currency-change bento-currency-change--${up ? 'up' : 'down'}`}>
                 {up ? '+' : ''}{delta.toFixed(3)}%

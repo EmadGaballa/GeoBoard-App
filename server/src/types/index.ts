@@ -127,6 +127,7 @@ export interface DashboardResponse {
 export interface AuthUser {
   id: string
   email: string
+  username: string | null
   name: string | null
   avatar: string | null
   provider: string

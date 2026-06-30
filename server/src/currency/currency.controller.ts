@@ -4,11 +4,12 @@
 
 import { Request, Response, NextFunction } from 'express'
 import { currencyService } from './currency.service.js'
+import { currencyConvertSchema, currencyQuerySchema } from '../common/validation.js'
 
 export class CurrencyController {
   async getRates(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const base = (req.query.base as string) || 'USD'
+      const { base } = currencyQuerySchema.parse(req.query)
       const rates = await currencyService.getRates(base)
       res.json({
         success: true,
@@ -22,18 +23,13 @@ export class CurrencyController {
 
   async convert(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { from, to, amount } = req.query as { from?: string; to?: string; amount?: string }
+      const { from, to, amount } = currencyConvertSchema.parse({
+        from: req.query.from,
+        to: req.query.to,
+        amount: req.query.amount ? parseFloat(req.query.amount as string) : undefined,
+      })
 
-      if (!from || !to || !amount) {
-        res.json({ success: false, error: 'from, to, and amount query parameters are required' })
-        return
-      }
-
-      const result = await currencyService.convert(
-        from.toUpperCase(),
-        to.toUpperCase(),
-        parseFloat(amount),
-      )
+      const result = await currencyService.convert(from, to, amount)
       res.json({
         success: true,
         data: result,

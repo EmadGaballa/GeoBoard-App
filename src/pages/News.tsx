@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { fetchNewsData, searchNews, NewsArticle } from '../services/api/news'
+import { fetchNewsData, searchNews } from '../services/api/news'
+import type { NewsArticle } from '../services/types'
 import '../styles/News.css'
 
 // ======================================================
@@ -54,14 +55,14 @@ const fadeUp = {
   hidden:  { opacity: 0, y: 20 },
   visible: (i: number) => ({
     opacity: 1, y: 0,
-    transition: { duration: 0.55, delay: i * 0.06, ease: [0.16, 1, 0.3, 1] },
+    transition: { duration: 0.55, delay: i * 0.06, ease: [0.16, 1, 0.3, 1] as const },
   }),
   exit: { opacity: 0, scale: 0.97, transition: { duration: 0.2 } },
 }
 
 const modalVariants = {
   hidden:  { opacity: 0, y: 24, scale: 0.97 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const } },
   exit:    { opacity: 0, y: 16, scale: 0.98, transition: { duration: 0.22 } },
 }
 

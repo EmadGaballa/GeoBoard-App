@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'geoboard-location'
 
-export const saveLocation = (location: any) => {
+export const saveLocation = (location: { latitude: number; longitude: number; city: string; country: string; timezone: string }) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(location))
 }
 
@@ -14,4 +14,8 @@ export const loadLocation = () => {
   } catch {
     return null
   }
+}
+
+export const clearLocation = () => {
+  localStorage.removeItem(STORAGE_KEY)
 }

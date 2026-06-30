@@ -17,6 +17,7 @@
     "@prisma/client": "^6.5.0",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.40.0",
+    "common-password-checker": "^0.1.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
@@ -25,8 +26,10 @@
     "helmet": "^8.0.0",
     "ioredis": "^5.5.0",
     "jsonwebtoken": "^9.0.2",
+
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "resend": "^6.16.0",
     "uuid": "^11.1.0",
     "zod": "^3.24.2"
   },

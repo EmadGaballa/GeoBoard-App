@@ -1,8 +1,10 @@
 import { apiClient } from '../apiClient'
 import { WeatherData, ForecastDay, HourlyForecast } from '../types'
 
+const API_BASE = '/api/weather'
+
 // ======================================================
-// API SERVICE: WEATHER
+// API SERVICE: WEATHER — via backend proxy
 // ======================================================
 
 /**
@@ -13,57 +15,12 @@ export const fetchWeatherData = async (
   longitude: number
 ): Promise<WeatherData> => {
   try {
-    // Using Open-Meteo API (free, no API key required)
-    const response = await apiClient.get<any>(
-      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,pressure_msl,visibility&daily=sunrise,sunset,uv_index_max&timezone=auto`
+    const response = await apiClient.get<{ success: boolean; data: WeatherData }>(
+      `${API_BASE}/current?lat=${latitude}&lng=${longitude}`
     )
-
-    const current = response.current
-    const daily = response.daily
-
-    // Weather code to condition mapping (WMO Weather codes)
-    const weatherConditions: { [key: number]: string } = {
-      0: 'Clear',
-      1: 'Partly Cloudy',
-      2: 'Cloudy',
-      3: 'Overcast',
-      45: 'Foggy',
-      48: 'Foggy',
-      51: 'Light Drizzle',
-      53: 'Moderate Drizzle',
-      55: 'Dense Drizzle',
-      61: 'Slight Rain',
-      63: 'Moderate Rain',
-      65: 'Heavy Rain',
-      71: 'Slight Snow',
-      73: 'Moderate Snow',
-      75: 'Heavy Snow',
-      80: 'Slight Rain Showers',
-      81: 'Moderate Rain Showers',
-      82: 'Violent Rain Showers',
-      85: 'Slight Snow Showers',
-      86: 'Heavy Snow Showers',
-      95: 'Thunderstorm',
-      96: 'Thunderstorm with Hail',
-      99: 'Thunderstorm with Hail',
-    }
-
-    return {
-      temperature: current.temperature_2m,
-      feelsLike: current.apparent_temperature,
-      condition: weatherConditions[current.weather_code] || 'Unknown',
-      humidity: current.relative_humidity_2m,
-      windSpeed: current.wind_speed_10m,
-      pressure: current.pressure_msl,
-      visibility: Math.round((current.visibility || 10000) / 1000),
-      uvIndex: Math.round(daily.uv_index_max[0] || 0),
-      sunrise: daily.sunrise[0],
-      sunset: daily.sunset[0],
-      timezone: response.timezone,
-    }
+    return response.data
   } catch (error) {
     console.error('Error fetching weather:', error)
-    // Return mock data on error
     return getMockWeatherData()
   }
 }
@@ -76,27 +33,10 @@ export const fetch7DayForecast = async (
   longitude: number
 ): Promise<ForecastDay[]> => {
   try {
-    const response = await apiClient.get<any>(
-      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,weather_code,relative_humidity_2m_max,precipitation_sum,wind_speed_10m_max&timezone=auto`
+    const response = await apiClient.get<{ success: boolean; data: ForecastDay[] }>(
+      `${API_BASE}/forecast?lat=${latitude}&lng=${longitude}`
     )
-
-    const daily = response.daily
-    const weatherConditions = getWeatherConditions()
-
-    const forecastDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-
-    return daily.time.slice(0, 7).map((date: string, index: number) => ({
-      day: forecastDays[(new Date(date).getDay() + 6) % 7],
-      date,
-      temp: Math.round((daily.temperature_2m_max[index] + daily.temperature_2m_min[index]) / 2),
-      tempMin: Math.round(daily.temperature_2m_min[index]),
-      tempMax: Math.round(daily.temperature_2m_max[index]),
-      condition: weatherConditions[daily.weather_code[index]] || 'Unknown',
-      icon: getWeatherIcon(weatherConditions[daily.weather_code[index]] || 'Unknown'),
-      humidity: daily.relative_humidity_2m_max[index],
-      windSpeed: Math.round(daily.wind_speed_10m_max[index]),
-      precipitation: Math.round(daily.precipitation_sum[index] * 10) / 10,
-    }))
+    return response.data
   } catch (error) {
     console.error('Error fetching 7-day forecast:', error)
     return getMock7DayForecast()
@@ -112,20 +52,10 @@ export const fetchHourlyForecast = async (
   hours: number = 24
 ): Promise<HourlyForecast[]> => {
   try {
-    const response = await apiClient.get<any>(
-      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=auto`
+    const response = await apiClient.get<{ success: boolean; data: HourlyForecast[] }>(
+      `${API_BASE}/hourly?lat=${latitude}&lng=${longitude}&hours=${hours}`
     )
-
-    const hourly = response.hourly
-    const weatherConditions = getWeatherConditions()
-
-    return hourly.time.slice(0, hours).map((time: string, index: number) => ({
-      hour: new Date(time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      temp: Math.round(hourly.temperature_2m[index]),
-      condition: weatherConditions[hourly.weather_code[index]] || 'Unknown',
-      humidity: hourly.relative_humidity_2m[index],
-      windSpeed: Math.round(hourly.wind_speed_10m[index]),
-    }))
+    return response.data
   } catch (error) {
     console.error('Error fetching hourly forecast:', error)
     return getMockHourlyForecast()
@@ -135,32 +65,6 @@ export const fetchHourlyForecast = async (
 // ======================================================
 // HELPER FUNCTIONS
 // ======================================================
-
-const getWeatherConditions = (): { [key: number]: string } => ({
-  0: 'Clear',
-  1: 'Partly Cloudy',
-  2: 'Cloudy',
-  3: 'Overcast',
-  45: 'Foggy',
-  48: 'Foggy',
-  51: 'Light Drizzle',
-  53: 'Moderate Drizzle',
-  55: 'Dense Drizzle',
-  61: 'Slight Rain',
-  63: 'Moderate Rain',
-  65: 'Heavy Rain',
-  71: 'Slight Snow',
-  73: 'Moderate Snow',
-  75: 'Heavy Snow',
-  80: 'Slight Rain Showers',
-  81: 'Moderate Rain Showers',
-  82: 'Violent Rain Showers',
-  85: 'Slight Snow Showers',
-  86: 'Heavy Snow Showers',
-  95: 'Thunderstorm',
-  96: 'Thunderstorm with Hail',
-  99: 'Thunderstorm with Hail',
-})
 
 export const getWeatherIcon = (condition: string): string => {
   const lowerCondition = condition.toLowerCase()

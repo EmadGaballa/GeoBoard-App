@@ -4,14 +4,15 @@
 
 import { Request, Response, NextFunction } from 'express'
 import { newsService } from './news.service.js'
+import { newsQuerySchema } from '../common/validation.js'
 
 export class NewsController {
   async getNews(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const category = (req.query.category as string) || 'technology'
-      const pageSize = parseInt(req.query.pageSize as string) || 12
+      const { category, pageSize } = newsQuerySchema.parse(req.query)
+      const size = pageSize ? parseInt(pageSize) : 12
 
-      const news = await newsService.getNews(category, pageSize)
+      const news = await newsService.getNews(category, size)
       res.json({
         success: true,
         data: news,

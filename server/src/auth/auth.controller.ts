@@ -2,144 +2,242 @@
 // GEOBOARD — AUTH CONTROLLER
 // ======================================================
 
-import { Request, Response, NextFunction } from 'express'
-import passport from 'passport'
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20'
-import { config } from '../config/index.js'
-import { authService } from './auth.service.js'
-import { emailLoginSchema, registerSchema } from '../common/validation.js'
-import { ValidationError } from '../common/errors.js'
-
-// ── Passport Google Strategy ──────────────────────────
-
-passport.use(new GoogleStrategy({
-  clientID: config.google.clientId,
-  clientSecret: config.google.clientSecret,
-  callbackURL: config.google.callbackUrl,
-}, async (_accessToken, _refreshToken, profile, done) => {
-  try {
-    const user = await authService.handleGoogleLogin({
-      id: profile.id,
-      email: profile.emails?.[0]?.value || `${profile.id}@google-oauth.com`,
-      name: profile.displayName,
-      picture: profile.photos?.[0]?.value || '',
-    })
-    done(null, user)
-  } catch (err) {
-    done(err as Error)
-  }
-}))
+import { Request, Response, NextFunction } from "express";
+import { config } from "../config/index.js";
+import { authService } from "./auth.service.js";
+import { emailLoginSchema, registerSchema, updateProfileSchema, forgotPasswordSchema, validateResetTokenSchema, resetPasswordSchema } from "../common/validation.js";
 
 export class AuthController {
-  // ── Google OAuth ─────────────────────────────────────
-
-  async googleAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
-    passport.authenticate('google', {
-      scope: ['profile', 'email'],
-      session: false,
-    })(req, res, next)
+  constructor() {
+    this.login = this.login.bind(this);
+    this.register = this.register.bind(this);
+    this.logout = this.logout.bind(this);
+    this.me = this.me.bind(this);
+    this.validate = this.validate.bind(this);
+    this.updateProfile = this.updateProfile.bind(this);
+    this.forgotPassword = this.forgotPassword.bind(this);
+    this.validateResetToken = this.validateResetToken.bind(this);
+    this.resetPassword = this.resetPassword.bind(this);
   }
 
-  async googleCallback(req: Request, res: Response, next: NextFunction): Promise<void> {
-    passport.authenticate('google', { session: false }, (err: Error | null, authResponse?: { token: string; user: { id: string } }) => {
-      if (err || !authResponse) {
-        res.redirect(`${config.server.frontendUrl}/login?error=google_auth_failed`)
-        return
-      }
-
-      // Set httpOnly cookie
-      res.cookie('token', authResponse.token, {
-        httpOnly: true,
-        secure: config.server.nodeEnv === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      })
-
-      // Redirect to frontend
-      res.redirect(`${config.server.frontendUrl}/auth/callback?token=${authResponse.token}`)
-    })(req, res, next)
-  }
-
-  // ── Email/Password Auth ──────────────────────────────
-
+  // ────────────────────────────────────────────────────
+  // LOGIN
+  // ────────────────────────────────────────────────────
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { email, password } = emailLoginSchema.parse(req.body)
-      const result = await authService.loginWithEmail(email, password)
+      const { email, password } = emailLoginSchema.parse(req.body);
 
-      this.setTokenCookie(res, result.token)
-      res.json({ success: true, data: result })
+      const result = await authService.loginWithEmail(email, password);
+
+      this.setTokenCookie(res, result.token);
+
+      res.json({
+        success: true,
+        data: {
+          user: result.user,
+        },
+      });
     } catch (err) {
-      next(err instanceof ValidationError ? err : undefined)
+      next(err);
+      return;
     }
   }
 
-  async register(req: Request, res: Response, next: NextFunction): Promise<void> {
+  // ────────────────────────────────────────────────────
+  // REGISTER
+  // ────────────────────────────────────────────────────
+  async register(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
     try {
-      const { email, password, name } = registerSchema.parse(req.body)
-      const result = await authService.register(email, password, name)
+      const { email, password, username, name, avatarId } = registerSchema.parse(
+        req.body,
+      );
 
-      this.setTokenCookie(res, result.token)
-      res.json({ success: true, data: result })
+      const result = await authService.register(
+        email,
+        password,
+        username,
+        name,
+        avatarId,
+      );
+
+      this.setTokenCookie(res, result.token);
+
+      res.json({
+        success: true,
+        data: {
+          user: result.user,
+        },
+      });
     } catch (err) {
-      next(err instanceof ValidationError ? err : undefined)
+      next(err);
+      return;
     }
   }
 
-  // ── Logout ──────────────────────────────────────────
+  // ────────────────────────────────────────────────────
+  // UPDATE PROFILE
+  // ────────────────────────────────────────────────────
+  async updateProfile(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const { name, avatar } = updateProfileSchema.parse(req.body);
 
+      const updatedUser = await authService.updateProfile(req.user!.id, {
+        name,
+        avatar,
+      });
+
+      res.json({
+        success: true,
+        data: updatedUser,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // ────────────────────────────────────────────────────
+  // LOGOUT
+  // ────────────────────────────────────────────────────
   async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const token = req.cookies?.token || req.headers.authorization?.slice(7)
+      const token = req.cookies?.token || req.headers.authorization?.slice(7);
+
       if (token) {
-        await authService.logout(token)
+        await authService.logout(token);
       }
 
-      res.clearCookie('token')
-      res.json({ success: true, data: { message: 'Logged out successfully' } })
+      res.clearCookie("token");
+
+      res.json({
+        success: true,
+        data: { message: "Logged out successfully" },
+      });
     } catch (err) {
-      next(err)
+      next(err);
     }
   }
 
-  // ── Get Current User ────────────────────────────────
-
+  // ────────────────────────────────────────────────────
+  // CURRENT USER
+  // ────────────────────────────────────────────────────
   async me(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const user = await authService.getCurrentUser(req.user!.id)
-      res.json({ success: true, data: user })
+      const user = await authService.getCurrentUser(req.user!.id);
+
+      res.json({
+        success: true,
+        data: user,
+      });
     } catch (err) {
-      next(err)
+      next(err);
     }
   }
 
-  // ── Token Validation ────────────────────────────────
-
-  async validate(req: Request, res: Response, next: NextFunction): Promise<void> {
+  // ────────────────────────────────────────────────────
+  // VALIDATE TOKEN
+  // ────────────────────────────────────────────────────
+  async validate(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
     try {
-      const token = req.body.token || req.cookies?.token
+      const token = req.body.token || req.cookies?.token;
+
       if (!token) {
-        res.json({ success: true, data: { valid: false } })
-        return
+        res.json({
+          success: true,
+          data: { valid: false },
+        });
+        return;
       }
 
-      const result = await authService.validateToken(token)
-      res.json({ success: true, data: result })
+      const result = await authService.validateToken(token);
+
+      res.json({
+        success: true,
+        data: result,
+      });
     } catch (err) {
-      next(err)
+      next(err);
     }
   }
 
-  // ── Helpers ─────────────────────────────────────────
+  // ────────────────────────────────────────────────────
+  // FORGOT PASSWORD
+  // ────────────────────────────────────────────────────
+  async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { email } = forgotPasswordSchema.parse(req.body);
 
+      await authService.forgotPassword(email);
+
+      res.json({
+        success: true,
+        message: "If an account with that email exists, a password reset link has been sent.",
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // ────────────────────────────────────────────────────
+  // VALIDATE RESET TOKEN
+  // ────────────────────────────────────────────────────
+  async validateResetToken(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { token } = validateResetTokenSchema.parse(req.body);
+
+      const isValid = await authService.validateResetToken(token);
+
+      res.json({
+        success: true,
+        data: { valid: isValid },
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // ────────────────────────────────────────────────────
+  // RESET PASSWORD
+  // ────────────────────────────────────────────────────
+  async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { token, newPassword } = resetPasswordSchema.parse(
+        req.body,
+      );
+
+      await authService.resetPassword(token, newPassword);
+
+      res.json({
+        success: true,
+        message: "Password has been reset successfully",
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // ────────────────────────────────────────────────────
+  // COOKIE HELPER
+  // ────────────────────────────────────────────────────
   private setTokenCookie(res: Response, token: string): void {
-    res.cookie('token', token, {
+    res.cookie("token", token, {
       httpOnly: true,
-      secure: config.server.nodeEnv === 'production',
-      sameSite: 'lax',
+      secure: config.server.nodeEnv === "production",
+      sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
-    })
+    });
   }
 }
 
-export const authController = new AuthController()
+export const authController = new AuthController();

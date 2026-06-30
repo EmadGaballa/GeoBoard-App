@@ -67,13 +67,14 @@ export interface NewsArticle {
   id: string
   title: string
   description: string
-  image: string
+  image: string | null
   category: string
   source: string
   publishedAt: string
   url: string
   author?: string
   content?: string
+  isBreaking?: boolean
 }
 
 export interface NewsResponse {

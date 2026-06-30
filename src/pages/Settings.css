@@ -1,0 +1,660 @@
+/* ======================================================
+   GEOBOARD — SETTINGS (CINEMATIC / APPLE-LEVEL UI)
+   ====================================================== */
+
+.settings-page {
+  min-height: 100vh;
+  padding: 2.5rem;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(99,102,241,0.25), transparent 40%),
+    radial-gradient(circle at 90% 20%, rgba(139,92,246,0.18), transparent 45%),
+    radial-gradient(circle at 50% 90%, rgba(14,165,233,0.12), transparent 45%),
+    linear-gradient(135deg, #070a14 0%, #0a1024 50%, #0b1633 100%);
+  color: #fff;
+  overflow-x: hidden;
+}
+
+/* subtle animated glow overlay */
+.settings-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.04), transparent 60%);
+  pointer-events: none;
+}
+
+/* CONTAINER */
+.settings-container {
+  max-width: 860px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* HEADER */
+.settings-header {
+  margin-bottom: 2.5rem;
+}
+
+.settings-title {
+  font-size: 2.75rem;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 40%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+}
+
+.settings-subtitle {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.6);
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+}
+
+/* ======================================================
+   PROFILE HERO CARD (glassmorphism)
+   ====================================================== */
+
+.settings-profile-card {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  padding: 2rem 2.25rem;
+  margin-bottom: 1.5rem;
+  border-radius: 24px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  backdrop-filter: blur(24px);
+  box-shadow:
+    0 12px 40px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  transition: all 0.3s ease;
+}
+
+.settings-profile-card:hover {
+  border-color: rgba(129,140,248,0.30);
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.5),
+    0 0 0 1px rgba(99,102,241,0.15);
+  transform: translateY(-2px);
+}
+
+.settings-profile-avatar {
+  flex-shrink: 0;
+}
+
+.settings-profile-avatar .avatar-picker {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.12);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.settings-profile-card:hover .settings-profile-avatar .avatar-picker {
+  border-color: rgba(129,140,248,0.4);
+  box-shadow: 0 8px 40px rgba(99,102,241,0.25);
+}
+
+.settings-profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.settings-profile-name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.settings-profile-email {
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.5);
+  margin: 0;
+}
+
+/* BADGE */
+.settings-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.settings-badge--auto {
+  background: rgba(34,197,94,0.12);
+  border: 1px solid rgba(34,197,94,0.25);
+  color: #86efac;
+}
+
+.settings-badge--manual {
+  background: rgba(251,191,36,0.12);
+  border: 1px solid rgba(251,191,36,0.25);
+  color: #fde68a;
+}
+
+/* SECTIONS */
+.settings-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* GLASS CARD */
+.settings-section {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 22px;
+  padding: 1.6rem;
+  backdrop-filter: blur(18px);
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+  transition: all 0.25s ease;
+}
+
+.settings-section:hover {
+  transform: translateY(-2px);
+  border-color: rgba(129,140,248,0.25);
+  box-shadow:
+    0 18px 50px rgba(0,0,0,0.5),
+    0 0 0 1px rgba(99,102,241,0.15);
+}
+
+/* DANGER ZONE SECTION */
+.settings-section--danger {
+  border-color: rgba(239,68,68,0.12);
+  background: rgba(239,68,68,0.03);
+}
+
+.settings-section--danger:hover {
+  border-color: rgba(239,68,68,0.25);
+  box-shadow:
+    0 18px 50px rgba(0,0,0,0.5),
+    0 0 0 1px rgba(239,68,68,0.12);
+}
+
+.settings-section--danger .settings-section-header {
+  color: #fca5a5;
+}
+
+.settings-section--danger .settings-section-header h2 {
+  color: #fca5a5;
+}
+
+/* SECTION HEADER */
+.settings-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.4rem;
+  color: #fff;
+}
+
+.settings-section-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.settings-section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ======================================================
+   INFO ROW (modern label + field layout)
+   ====================================================== */
+
+.settings-info-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.settings-info-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  font-weight: 500;
+}
+
+/* FIELD BLOCKS (legacy, kept for compatibility) */
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-bottom: 0.9rem;
+}
+
+.settings-field label {
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+
+/* VALUE DISPLAY (APPLE STYLE) */
+.settings-value {
+  font-size: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.9);
+  transition: all 0.2s ease;
+}
+
+/* SPECIAL READONLY EMAIL STYLE (IMPORTANT) */
+.settings-value.readonly {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.55);
+  cursor: default;
+  position: relative;
+}
+
+.settings-value.readonly::after {
+  content: "Locked";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 0.08em;
+}
+
+/* ======================================================
+   SAVE ROW
+   ====================================================== */
+
+.settings-save-row {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+}
+
+/* ======================================================
+   LOCATION DISPLAY CARD
+   ====================================================== */
+
+.settings-location-display {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 1rem 1.2rem;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: all 0.2s ease;
+}
+
+.settings-location-display:hover {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(129,140,248,0.15);
+}
+
+.settings-location-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(99,102,241,0.10);
+  border: 1px solid rgba(99,102,241,0.15);
+  color: #818cf8;
+  flex-shrink: 0;
+}
+
+.settings-location-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.location-city {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.95);
+}
+
+.location-country {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.5);
+}
+
+/* ======================================================
+   DANGER ZONE TEXT
+   ====================================================== */
+
+.settings-danger-text {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ACTION AREA */
+.settings-actions {
+  display: flex;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  margin-top: 0.25rem;
+}
+
+/* BUTTON BASE */
+.settings-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.15rem;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  outline: none;
+  font-family: inherit;
+  line-height: 1;
+}
+
+.settings-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-btn-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* PRIMARY */
+.settings-btn--primary {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  box-shadow: 0 10px 25px rgba(99,102,241,0.25);
+}
+
+.settings-btn--primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 35px rgba(99,102,241,0.35);
+}
+
+/* DANGER */
+.settings-btn--danger {
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.25);
+  color: #fca5a5;
+}
+
+.settings-btn--danger:hover {
+  background: rgba(239,68,68,0.15);
+  transform: translateY(-1px);
+}
+
+/* LOGOUT */
+.settings-btn--logout {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(239,68,68,0.20);
+  color: #fca5a5;
+}
+
+.settings-btn--logout:hover {
+  background: rgba(239,68,68,0.10);
+  border-color: rgba(239,68,68,0.35);
+  transform: translateY(-1px);
+}
+
+/* ======================================================
+   SPINNER (for saving state)
+   ====================================================== */
+
+.settings-btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: settings-spin 0.6s linear infinite;
+}
+
+@keyframes settings-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ======================================================
+   INPUTS
+   ====================================================== */
+
+.settings-input {
+  width: 100%;
+  font-size: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.9);
+  outline: none;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.settings-input:focus {
+  border-color: rgba(99,102,241,0.6);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+  background: rgba(255,255,255,0.06);
+}
+
+.settings-input::placeholder {
+  color: rgba(255,255,255,0.25);
+}
+
+.settings-input--error {
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  background: rgba(239, 68, 68, 0.05) !important;
+}
+
+.settings-field-error {
+  font-size: 0.8rem;
+  color: #fca5a5;
+  margin-top: -0.25rem;
+}
+
+/* ======================================================
+   PASSWORD FORM
+   ====================================================== */
+
+.settings-password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.settings-password-form .settings-btn {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+}
+
+.settings-password-requirements {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 0.5rem 0;
+}
+
+.settings-password-requirements p {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.settings-password-requirements ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.settings-password-requirements li {
+  margin-bottom: 0.25rem;
+}
+
+.settings-error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+}
+
+.settings-success-message {
+  background: rgba(52, 211, 153, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  color: #6ee7b7;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+}
+
+.settings-hint {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+  margin-top: 0.25rem;
+}
+
+/* ======================================================
+   MOBILE
+   ====================================================== */
+
+@media (max-width: 640px) {
+  .settings-page {
+    padding: 1.25rem;
+  }
+
+  .settings-title {
+    font-size: 2rem;
+  }
+
+  .settings-section {
+    padding: 1.2rem;
+  }
+
+  .settings-profile-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.75rem 1.5rem;
+    gap: 1rem;
+  }
+
+  .settings-profile-info {
+    align-items: center;
+  }
+
+  .settings-location-display {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .settings-location-info {
+    align-items: center;
+  }
+
+  .settings-save-row {
+    justify-content: center;
+  }
+
+  .settings-actions {
+    justify-content: center;
+  }
+
+  .settings-password-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .settings-password-form .settings-btn {
+    align-self: stretch;
+  }
+
+  .settings-password-requirements {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 1rem;
+    margin: 0.5rem 0;
+  }
+
+  .settings-password-requirements p {
+    margin: 0 0 0.5rem;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .settings-password-requirements ul {
+    margin: 0;
+    padding-left: 1.5rem;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .settings-password-requirements li {
+    margin-bottom: 0.25rem;
+  }
+
+  .settings-error-message {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+  }
+
+  .settings-success-message {
+    background: rgba(52, 211, 153, 0.1);
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    color: #6ee7b7;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+  }
+
+  .settings-hint {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
+    margin-top: 0.25rem;
+  }
+}

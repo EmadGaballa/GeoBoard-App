@@ -1,8 +1,3 @@
-// ======================================================
-// GEOBOARD — PRISMA DATABASE SCHEMA
-// Production-grade PostgreSQL schema
-// ======================================================
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,36 +7,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ======================================================
-// USERS
-// ======================================================
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  avatar    String?
-  provider  String   @default("google") // "google" | "email"
-  providerId String? @unique // Google sub ID
-  password  String?  // null for OAuth users
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  sessions        Session[]
+  id              String           @id @default(uuid())
+  email           String           @unique
+  name            String?
+  username        String?          @unique
+  emailVerified   Boolean          @default(false)
+  avatar          String?          @default("fox")
+  provider        String           @default("google")
+  providerId      String?          @unique
+  password        String?
+  lastPasswordChange DateTime?     @default(now())
+  lastDisplayNameChange DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  analytics       Analytics[]
+  dashboardConfig DashboardConfig?
   locations       Location[]
   savedLocations  SavedLocation[]
+  sessions        Session[]
   preferences     UserPreference?
-  dashboardConfig DashboardConfig?
-  analytics       Analytics[]
+  passwordResetTokens PasswordResetToken[]
 
   @@index([email])
+  @@index([username])
   @@index([provider, providerId])
   @@map("users")
 }
 
-// ======================================================
-// SESSIONS
-// ======================================================
 model Session {
   id        String   @id @default(uuid())
   userId    String
@@ -49,8 +42,7 @@ model Session {
   expiresAt DateTime
   createdAt DateTime @default(now())
   lastUsed  DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
   @@index([userId])
@@ -58,9 +50,20 @@ model Session {
   @@map("sessions")
 }
 
-// ======================================================
-// LOCATIONS
-// ======================================================
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
 model Location {
   id        String   @id @default(uuid())
   userId    String
@@ -68,21 +71,17 @@ model Location {
   country   String
   latitude  Float
   longitude Float
-  source    String   @default("gps") // "gps" | "ip" | "manual" | "map"
+  source    String   @default("gps")
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userId, isActive])
   @@map("locations")
 }
 
-// ======================================================
-// SAVED LOCATIONS
-// ======================================================
 model SavedLocation {
   id        String   @id @default(uuid())
   userId    String
@@ -90,60 +89,47 @@ model SavedLocation {
   country   String
   latitude  Float
   longitude Float
-  label     String?  // e.g. "Home", "Office"
+  label     String?
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, city, country])
   @@index([userId])
   @@map("saved_locations")
 }
 
-// ======================================================
-// USER PREFERENCES
-// ======================================================
 model UserPreference {
-  id               String  @id @default(uuid())
-  userId           String  @unique
-  temperatureUnit  String  @default("celsius") // "celsius" | "fahrenheit"
-  newsCategories   String  @default("[\"tech\",\"world\"]") // JSON array
-  currencyBase     String  @default("USD")
-  timeFormat       String  @default("24h") // "12h" | "24h"
-  theme            String  @default("dark")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String @id @default(uuid())
+  userId          String @unique
+  temperatureUnit String @default("celsius")
+  newsCategories  String @default("[\"tech\",\"world\"]")
+  currencyBase    String @default("USD")
+  timeFormat      String @default("24h")
+  theme           String @default("dark")
+  user            User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_preferences")
 }
 
-// ======================================================
-// DASHBOARD CONFIG
-// ======================================================
 model DashboardConfig {
-  id              String  @id @default(uuid())
-  userId          String  @unique
-  widgets         String  @default("[\"weather\",\"news\",\"currency\",\"clock\",\"location\"]") // JSON array
-  layout          String  @default("grid")
-  defaultLocation String? // city name
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  widgets         String   @default("[\"weather\",\"news\",\"currency\",\"clock\",\"location\"]")
+  layout          String   @default("grid")
+  defaultLocation String?
   updatedAt       DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("dashboard_config")
 }
 
-// ======================================================
-// ANALYTICS
-// ======================================================
 model Analytics {
   id        String   @id @default(uuid())
   userId    String
-  event     String   // "weather_fetch" | "news_fetch" | "currency_fetch" | "location_change"
-  metadata  String?  // JSON string with additional context
+  event     String
+  metadata  String?
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userId, event])

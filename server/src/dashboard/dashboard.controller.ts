@@ -5,6 +5,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { dashboardService } from './dashboard.service.js'
 import { analyticsService } from '../analytics/analytics.service.js'
+import { dashboardConfigSchema } from '../common/validation.js'
 
 export class DashboardController {
   // ── Get full dashboard ────────────────────────────
@@ -44,7 +45,9 @@ export class DashboardController {
   async updateConfig(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = req.user!.id
-      const config = await dashboardService.updateConfig(userId, req.body)
+      // Validate with Zod before passing to service
+      const data = dashboardConfigSchema.parse(req.body)
+      const config = await dashboardService.updateConfig(userId, data)
       res.json({ success: true, data: config, meta: { timestamp: new Date().toISOString() } })
     } catch (err) {
       next(err)

@@ -25,6 +25,10 @@ export { default as WeatherCard } from './cards/WeatherCard'
 // Widgets
 export { default as CalendarWidget } from './widgets/CalendarWidget'
 
+// New Components
+export { LocationModal } from './LocationModal'
+export { MapPicker } from './MapPicker'
+
 // Types
 export type {
   WeatherCardProps,
@@ -39,4 +43,4 @@ export type {
   SidebarProps,
   DashboardGridProps,
   CalendarWidgetProps,
-} from '../../services/types'
+} from '../services/types'

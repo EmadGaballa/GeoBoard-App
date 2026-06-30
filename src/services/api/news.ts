@@ -1,133 +1,39 @@
 // ======================================================
-// API SERVICE: NEWS — Webz.io integration
+// API SERVICE: NEWS — via backend proxy
 // ======================================================
 
-export interface NewsArticle {
-  id: string
-  title: string
-  description: string
-  image: string | null
-  category: string
-  source: string
-  publishedAt: string
-  url: string
-  author?: string
-  content?: string
-  sentiment?: string
-  isBreaking?: boolean
-}
+import { apiClient } from '../apiClient'
+import type { NewsArticle } from '../types'
 
-const WEBZ_TOKEN = '5980f9d8-ca5c-4294-b11f-0069d5ba0327'
-const WEBZ_BASE  = 'https://api.webz.io/newsApiLite'
-
-// Map our UI category labels → Webz topic/keyword queries
-const CATEGORY_QUERIES: Record<string, string> = {
-  business:       'topic:"financial and economic news"',
-  technology:     'topic:"science and technology"',
-  politics:       'topic:politics',
-  health:         'topic:health',
-  sports:         'topic:sports',
-  entertainment:  'topic:"arts, culture and entertainment"',
-  world:          'topic:"world news"',
-  science:        'topic:science',
-  environment:    'topic:environment',
-  education:      'topic:education',
-}
-
-// Format a Webz timestamp (ISO string) into a readable date
-const formatDate = (iso: string): string => {
-  try {
-    return new Date(iso).toLocaleDateString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric',
-    })
-  } catch {
-    return iso
-  }
-}
-
-// Pick the best available image from a Webz post
-const resolveImage = (post: any): string | null => {
-  // 1. thread.main_image
-  if (post.thread?.main_image && post.thread.main_image.startsWith('http')) {
-    return post.thread.main_image
-  }
-  // 2. external_images array
-  if (Array.isArray(post.external_images) && post.external_images.length > 0) {
-    const img = post.external_images[0]
-    if (typeof img === 'string' && img.startsWith('http')) return img
-    if (img?.url?.startsWith('http')) return img.url
-  }
-  return null
-}
-
-// Convert a raw Webz post → our NewsArticle shape
-const mapPost = (post: any, category: string): NewsArticle => ({
-  id:          post.uuid || `${post.url}-${Date.now()}`,
-  title:       post.title || 'Untitled',
-  description: post.text && post.text !== 'Full text is unavailable in the news API lite version'
-                 ? post.text.slice(0, 220) + (post.text.length > 220 ? '…' : '')
-                 : post.thread?.title || 'No description available.',
-  image:       resolveImage(post),
-  category,
-  source:      post.thread?.site_full || post.thread?.site || post.author || 'Unknown',
-  publishedAt: post.published ? formatDate(post.published) : '',
-  url:         post.url || post.thread?.url || '#',
-  author:      post.author,
-  sentiment:   post.sentiment,
-  isBreaking:  post.sentiment === 'negative' && Math.random() < 0.15, // flag ~15% as breaking
-})
-
-// ── Main fetch ────────────────────────────────────────────
+const API_BASE = '/api/news'
 
 export const fetchNewsData = async (
   category: string = 'business',
   pageSize: number = 12,
 ): Promise<NewsArticle[]> => {
-  const topicQuery = CATEGORY_QUERIES[category] ?? `topic:${category}`
-  const q = encodeURIComponent(`${topicQuery}`)
-  const url = `${WEBZ_BASE}?token=${WEBZ_TOKEN}&q=${q}&size=${pageSize}&sort=relevancy&order=desc`
-
   try {
-    const res  = await fetch(url)
-    if (!res.ok) throw new Error(`Webz API error: ${res.status}`)
-    const data = await res.json()
-
-    if (Array.isArray(data.posts) && data.posts.length > 0) {
-      return data.posts
-        .filter((p: any) => p.title && p.url)
-        .map((p: any) => mapPost(p, category))
-    }
-    return getMockNewsData(category)
-  } catch (err) {
-    console.error('fetchNewsData error:', err)
+    const response = await apiClient.get<{ success: boolean; data: NewsArticle[] }>(
+      `${API_BASE}?category=${encodeURIComponent(category)}&pageSize=${pageSize}`
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error fetching news:', error)
     return getMockNewsData(category)
   }
 }
-
-// ── Search ────────────────────────────────────────────────
 
 export const searchNews = async (
   query: string,
   pageSize: number = 12,
 ): Promise<NewsArticle[]> => {
   if (!query.trim()) return []
-
-  const q = encodeURIComponent(query.trim())
-  const url = `${WEBZ_BASE}?token=${WEBZ_TOKEN}&q=${q}&size=${pageSize}&sort=relevancy&order=desc`
-
   try {
-    const res  = await fetch(url)
-    if (!res.ok) throw new Error(`Webz search error: ${res.status}`)
-    const data = await res.json()
-
-    if (Array.isArray(data.posts) && data.posts.length > 0) {
-      return data.posts
-        .filter((p: any) => p.title && p.url)
-        .map((p: any) => mapPost(p, 'search'))
-    }
-    return []
-  } catch (err) {
-    console.error('searchNews error:', err)
+    const response = await apiClient.get<{ success: boolean; data: NewsArticle[] }>(
+      `${API_BASE}/search?q=${encodeURIComponent(query.trim())}&pageSize=${pageSize}`
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error searching news:', error)
     return []
   }
 }
