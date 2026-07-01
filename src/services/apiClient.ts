@@ -8,21 +8,25 @@ import { ApiError } from './types'
 class ApiClient {
   private client: AxiosInstance
 
-  constructor() {
-    this.client = axios.create({
-      baseURL: 'http://localhost:3001',
-      timeout: 10000,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
+ constructor() {
+  const baseURL =
+    import.meta.env.VITE_API_URL ||
+    (import.meta.env.DEV ? 'http://localhost:3001' : '')
 
-    // Response interceptor for error handling
-    this.client.interceptors.response.use(
-      response => response,
-      error => this.handleError(error)
-    )
-  }
+  this.client = axios.create({
+    baseURL,
+    timeout: 10000,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    withCredentials: true,
+  })
+
+  this.client.interceptors.response.use(
+    response => response,
+    error => this.handleError(error)
+  )
+}
 
   private handleError(error: AxiosError): Promise<ApiError> {
     const apiError: ApiError = {

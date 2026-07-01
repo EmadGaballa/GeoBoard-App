@@ -35,7 +35,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = "http://localhost:3001/api/auth";
+// Uses localhost during development and Railway in production
+const API_URL =
+  `${import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")}/api/auth`;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -71,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   // -------------------------
-  // LOGIN (FIXED)
+  // LOGIN
   // -------------------------
   const login = useCallback(async (email: string, password: string) => {
     const response = await fetch(`${API_URL}/login`, {
@@ -82,11 +84,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       },
       body: JSON.stringify({
         email,
-        password, 
+        password,
       }),
     });
 
     const data = await response.json();
+
     console.log("[AuthContext] Login response:", data);
 
     if (!response.ok || !data.success) {
@@ -98,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   // -------------------------
-  // REGISTER (WITH AVATAR)
+  // REGISTER
   // -------------------------
   const register = useCallback(
     async (
@@ -144,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         credentials: "include",
       });
     } catch {
-      // ignore
+      // Ignore logout errors
     }
 
     setUser(null);
