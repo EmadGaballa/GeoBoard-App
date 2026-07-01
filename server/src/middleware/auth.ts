@@ -40,10 +40,6 @@ export async function authenticate(
     // Extract token from cookie or Authorization header
     let token: string | undefined
 
-    // DEBUG: Log cookies received
-    console.log("[Auth] COOKIE RECEIVED:", req.cookies)
-    console.log("[Auth] TOKEN:", req.cookies?.token)
-
     // Check httpOnly cookie first
     if (req.cookies?.token) {
       token = req.cookies.token

@@ -1,5 +1,5 @@
 /* ======================================================
-   AvatarPicker Component — Cinematic Edition
+   AvatarPicker Component
    ====================================================== */
 
 .avatar-wrapper {
@@ -14,9 +14,9 @@
 
 .avatar-grid {
   display: grid;
-  grid-template-columns: repeat(6, 56px);
+  grid-template-columns: repeat(6, 54px);
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   width: fit-content;
   margin: 0 auto;
 }
@@ -24,202 +24,56 @@
 /* Avatar Button */
 
 .avatar-option {
-  position: relative;
-  width: 60px;
-  height: 60px;
+  width: 54px;
+  height: 54px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.06),
-    rgba(255, 255, 255, 0.02)
-  );
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid transparent;
+  border-radius: 14px;
 
   cursor: pointer;
+  transition: all 0.2s ease;
+
   padding: 0;
   overflow: hidden;
-
-  transition:
-    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    background 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-
-  animation: avatar-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-}
-
-/* Staggered entrance for the first couple rows — purely cosmetic,
-   safe to remove if avatars are rendered dynamically in large numbers */
-.avatar-option:nth-child(1) { animation-delay: 0.02s; }
-.avatar-option:nth-child(2) { animation-delay: 0.04s; }
-.avatar-option:nth-child(3) { animation-delay: 0.06s; }
-.avatar-option:nth-child(4) { animation-delay: 0.08s; }
-.avatar-option:nth-child(5) { animation-delay: 0.1s; }
-.avatar-option:nth-child(6) { animation-delay: 0.12s; }
-.avatar-option:nth-child(7) { animation-delay: 0.14s; }
-.avatar-option:nth-child(8) { animation-delay: 0.16s; }
-.avatar-option:nth-child(9) { animation-delay: 0.18s; }
-.avatar-option:nth-child(10) { animation-delay: 0.2s; }
-.avatar-option:nth-child(11) { animation-delay: 0.22s; }
-.avatar-option:nth-child(12) { animation-delay: 0.24s; }
-
-@keyframes avatar-rise {
-  from {
-    opacity: 0;
-    transform: translateY(6px) scale(0.92);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* Subtle sheen sweep on hover */
-.avatar-option::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    120deg,
-    transparent 20%,
-    rgba(255, 255, 255, 0.12) 50%,
-    transparent 80%
-  );
-  transform: translateX(-100%);
-  transition: transform 0.6s ease;
-  pointer-events: none;
-}
-
-.avatar-option:hover::before {
-  transform: translateX(100%);
 }
 
 .avatar-option:hover {
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.1),
-    rgba(255, 255, 255, 0.03)
-  );
-  border-color: rgba(129, 140, 248, 0.4);
-  transform: translateY(-3px) scale(1.04);
-  box-shadow:
-    0 8px 20px rgba(99, 102, 241, 0.18),
-    0 0 0 1px rgba(129, 140, 248, 0.12) inset;
-}
-
-.avatar-option:active {
-  transform: translateY(-1px) scale(0.97);
-  transition-duration: 0.12s;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(99, 102, 241, 0.35);
+  transform: translateY(-2px);
 }
 
 .avatar-option:focus-visible {
   outline: none;
-  border-color: #818cf8;
-  box-shadow:
-    0 0 0 3px rgba(99, 102, 241, 0.3),
-    0 8px 20px rgba(99, 102, 241, 0.2);
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
 }
 
-/* Selected state — soft glow + ambient ring */
 .avatar-option--selected {
-  background: linear-gradient(
-    145deg,
-    rgba(99, 102, 241, 0.28),
-    rgba(79, 70, 229, 0.12)
-  );
-  border-color: #818cf8;
-  box-shadow:
-    0 0 0 2px rgba(129, 140, 248, 0.35),
-    0 6px 18px rgba(99, 102, 241, 0.35),
-    0 0 24px rgba(99, 102, 241, 0.25);
-  animation: avatar-select-pulse 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.avatar-option--selected:hover {
-  transform: translateY(-3px) scale(1.04);
-}
-
-@keyframes avatar-select-pulse {
-  0% {
-    box-shadow:
-      0 0 0 2px rgba(129, 140, 248, 0.35),
-      0 6px 18px rgba(99, 102, 241, 0.35),
-      0 0 0 rgba(99, 102, 241, 0.4);
-  }
-  60% {
-    box-shadow:
-      0 0 0 2px rgba(129, 140, 248, 0.35),
-      0 6px 18px rgba(99, 102, 241, 0.35),
-      0 0 28px rgba(99, 102, 241, 0.45);
-  }
-  100% {
-    box-shadow:
-      0 0 0 2px rgba(129, 140, 248, 0.35),
-      0 6px 18px rgba(99, 102, 241, 0.35),
-      0 0 24px rgba(99, 102, 241, 0.25);
-  }
+  background: rgba(99, 102, 241, 0.15);
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
 }
 
 /* Lucide Icons */
 
 .avatar-option svg {
-  width: 40px;
-  height: 40px;
+  width: 28px;
+  height: 28px;
   stroke-width: 2;
-  color: rgba(255, 255, 255, 0.92);
+  color: white;
   flex-shrink: 0;
-  transition:
-    color 0.3s ease,
-    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.avatar-option:hover svg {
-  color: #fff;
-  transform: scale(1.08);
-}
-
-.avatar-option--selected svg {
-  color: #fff;
-  filter: drop-shadow(0 0 6px rgba(129, 140, 248, 0.6));
-}
-
-/* Respect reduced-motion preferences */
-@media (prefers-reduced-motion: reduce) {
-  .avatar-option {
-    animation: none;
-    transition: background 0.15s ease, border-color 0.15s ease;
-  }
-  .avatar-option::before {
-    display: none;
-  }
-  .avatar-option:hover,
-  .avatar-option:active {
-    transform: none;
-  }
-  .avatar-option--selected {
-    animation: none;
-  }
 }
 
 /* Small screens */
 
 @media (max-width: 640px) {
   .avatar-grid {
-    grid-template-columns: repeat(4, 56px);
-    gap: 8px;
-  }
-}
-
-@media (max-width: 380px) {
-  .avatar-grid {
-    grid-template-columns: repeat(3, 54px);
+    grid-template-columns: repeat(4, 54px);
   }
 }
