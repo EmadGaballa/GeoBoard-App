@@ -4,6 +4,7 @@
 // ======================================================
 
 import { Queue, Worker, Job } from 'bullmq'
+import IORedis from 'ioredis'
 import { config } from '../config/index.js'
 import { weatherService } from '../weather/weather.service.js'
 import { newsService } from '../news/news.service.js'
@@ -18,20 +19,29 @@ const QUEUES = {
   NEWS_PREFETCH: 'news-prefetch',
 } as const
 
-// ── Priority Cities for Prefetching ───────────────────
+// ── Priority Cities ───────────────────────────────────
 
-const PRIORITY_CITIES: Array<{ name: string; lat: number; lng: number }> = [
-  { name: 'New York',      lat: 40.7128,  lng: -74.0060 },
-  { name: 'London',        lat: 51.5074,  lng: -0.1278 },
-  { name: 'Tokyo',         lat: 35.6762,  lng: 139.6503 },
-  { name: 'Cairo',         lat: 30.0444,  lng: 31.2357 },
-  { name: 'Dubai',         lat: 25.2048,  lng: 55.2708 },
-  { name: 'Sydney',        lat: -33.8688, lng: 151.2093 },
-  { name: 'Paris',         lat: 48.8566,  lng: 2.3522 },
-  { name: 'Singapore',     lat: 1.3521,   lng: 103.8198 },
-  { name: 'Mumbai',        lat: 19.0760,  lng: 72.8777 },
-  { name: 'São Paulo',     lat: -23.5505, lng: -46.6333 },
+const PRIORITY_CITIES = [
+  { name: 'New York', lat: 40.7128, lng: -74.0060 },
+  { name: 'London', lat: 51.5074, lng: -0.1278 },
+  { name: 'Tokyo', lat: 35.6762, lng: 139.6503 },
+  { name: 'Cairo', lat: 30.0444, lng: 31.2357 },
+  { name: 'Dubai', lat: 25.2048, lng: 55.2708 },
+  { name: 'Sydney', lat: -33.8688, lng: 151.2093 },
+  { name: 'Paris', lat: 48.8566, lng: 2.3522 },
+  { name: 'Singapore', lat: 1.3521, lng: 103.8198 },
+  { name: 'Mumbai', lat: 19.0760, lng: 72.8777 },
+  { name: 'São Paulo', lat: -23.5505, lng: -46.6333 },
 ]
+
+// ── SAFE Redis Connection (Railway-ready) ─────────────
+
+function createRedisConnection() {
+  return new IORedis(config.redis.url, {
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false,
+  })
+}
 
 export class JobService {
   private weatherQueue: Queue
@@ -40,83 +50,69 @@ export class JobService {
   private initialized = false
 
   constructor() {
-    const connection = {
-      host: config.redis.url.replace('redis://', '').split(':')[0],
-      port: parseInt(config.redis.url.split(':').pop() || '6379', 10),
-      password: config.redis.password || undefined,
-      maxRetriesPerRequest: null,
-    }
+    const connection = createRedisConnection()
 
     this.weatherQueue = new Queue(QUEUES.WEATHER_REFRESH, { connection })
     this.currencyQueue = new Queue(QUEUES.CURRENCY_REFRESH, { connection })
     this.newsQueue = new Queue(QUEUES.NEWS_PREFETCH, { connection })
   }
 
-  // ── Initialize Workers ────────────────────────────
-
   async initialize(): Promise<void> {
     if (this.initialized) return
     this.initialized = true
 
-    const connection = {
-      host: config.redis.url.replace('redis://', '').split(':')[0],
-      port: parseInt(config.redis.url.split(':').pop() || '6379', 10),
-      password: config.redis.password || undefined,
-      maxRetriesPerRequest: null,
-    }
+    const connection = createRedisConnection()
 
-    // ── Weather Refresh Worker ─────────────────────────
+    // ── Weather Worker ───────────────────────────────
     new Worker(
       QUEUES.WEATHER_REFRESH,
       async (job: Job) => {
-        const { lat, lng, city } = job.data as { lat: number; lng: number; city: string }
+        const { lat, lng, city } = job.data
+
         console.log(`[Job] Refreshing weather for ${city}...`)
-        try {
-          const weather = await weatherService.getCurrentWeather(lat, lng)
-          const forecast = await weatherService.get7DayForecast(lat, lng)
-          const cache = getCache()
-          await cache.set(`weather:${city.toLowerCase()}`, weather, config.cache.ttlWeather)
-          await cache.set(`weather:${lat.toFixed(2)}:${lng.toFixed(2)}:forecast`, forecast, config.cache.ttlWeather)
-          console.log(`[Job] Weather refreshed for ${city}`)
-        } catch (err) {
-          console.error(`[Job] Weather refresh failed for ${city}:`, err)
-        }
+
+        const weather = await weatherService.getCurrentWeather(lat, lng)
+        const forecast = await weatherService.get7DayForecast(lat, lng)
+
+        const cache = getCache()
+        await cache.set(`weather:${city.toLowerCase()}`, weather, config.cache.ttlWeather)
+        await cache.set(
+          `weather:${lat.toFixed(2)}:${lng.toFixed(2)}:forecast`,
+          forecast,
+          config.cache.ttlWeather,
+        )
       },
       { connection, concurrency: 2 },
     )
 
-    // ── Currency Refresh Worker ────────────────────────
+    // ── Currency Worker ─────────────────────────────
     new Worker(
       QUEUES.CURRENCY_REFRESH,
       async (job: Job) => {
-        const { base } = job.data as { base: string }
+        const { base } = job.data
+
         console.log(`[Job] Refreshing currency rates for ${base}...`)
-        try {
-          const rates = await currencyService.getRates(base)
-          const cache = getCache()
-          await cache.set(`currency:${base.toLowerCase()}`, rates, config.cache.ttlCurrency)
-          console.log(`[Job] Currency rates refreshed for ${base}`)
-        } catch (err) {
-          console.error(`[Job] Currency refresh failed for ${base}:`, err)
-        }
+
+        const rates = await currencyService.getRates(base)
+
+        const cache = getCache()
+        await cache.set(`currency:${base.toLowerCase()}`, rates, config.cache.ttlCurrency)
       },
       { connection, concurrency: 1 },
     )
 
-    // ── News Prefetch Worker ───────────────────────────
+    // ── News Worker ────────────────────────────────
     new Worker(
       QUEUES.NEWS_PREFETCH,
       async (job: Job) => {
-        const { category } = job.data as { category: string }
-        console.log(`[Job] Prefetching news for category: ${category}...`)
-        try {
-          const news = await newsService.getNews(category, 12)
-          const cache = getCache()
-          await cache.set(`news:global:${category}`, news, config.cache.ttlNews)
-          console.log(`[Job] News prefetched for ${category}`)
-        } catch (err) {
-          console.error(`[Job] News prefetch failed for ${category}:`, err)
-        }
+        const { category } = job.data
+
+        console.log(`[Job] Prefetching news for ${category}...`)
+
+        const news = await newsService.getNews(category, 12)
+
+        const cache = getCache()
+        await cache.set(`news:global:${category}`, news, config.cache.ttlNews)
       },
       { connection, concurrency: 3 },
     )
@@ -124,50 +120,39 @@ export class JobService {
     console.log('[Jobs] Background workers initialized')
   }
 
-  // ── Schedule Jobs ─────────────────────────────────
-
   async scheduleAll(): Promise<void> {
-    // Clear existing repeatable jobs
     await Promise.all([
       this.weatherQueue.obliterate({ force: true }).catch(() => {}),
       this.currencyQueue.obliterate({ force: true }).catch(() => {}),
       this.newsQueue.obliterate({ force: true }).catch(() => {}),
     ])
 
-    // Weather refresh for priority cities every 10 minutes
     for (const city of PRIORITY_CITIES) {
       await this.weatherQueue.add(
-        `weather-refresh-${city.name.toLowerCase().replace(/\s+/g, '-')}`,
-        { lat: city.lat, lng: city.lng, city: city.name },
+        `weather-${city.name}`,
+        city,
         {
-          repeat: { every: 10 * 60 * 1000 }, // 10 min
-          removeOnComplete: { age: 3600 },
-          removeOnFail: { age: 86400 },
+          repeat: { every: 10 * 60 * 1000 },
         },
       )
     }
 
-    // Currency refresh every 5 minutes
     await this.currencyQueue.add(
-      'currency-refresh-usd',
+      'currency-usd',
       { base: 'USD' },
       {
-        repeat: { every: 5 * 60 * 1000 }, // 5 min
-        removeOnComplete: { age: 3600 },
-        removeOnFail: { age: 86400 },
+        repeat: { every: 5 * 60 * 1000 },
       },
     )
 
-    // News prefetch for top categories every 15 minutes
     const categories = ['technology', 'business', 'world', 'sports', 'health']
+
     for (const category of categories) {
       await this.newsQueue.add(
-        `news-prefetch-${category}`,
+        `news-${category}`,
         { category },
         {
-          repeat: { every: 15 * 60 * 1000 }, // 15 min
-          removeOnComplete: { age: 3600 },
-          removeOnFail: { age: 86400 },
+          repeat: { every: 15 * 60 * 1000 },
         },
       )
     }
@@ -175,13 +160,7 @@ export class JobService {
     console.log('[Jobs] All recurring jobs scheduled')
   }
 
-  // ── Health ─────────────────────────────────────────
-
-  async health(): Promise<{
-    weatherQueue: { waiting: number; active: number }
-    currencyQueue: { waiting: number; active: number }
-    newsQueue: { waiting: number; active: number }
-  }> {
+  async health() {
     const [wWaiting, wActive] = await Promise.all([
       this.weatherQueue.getWaitingCount(),
       this.weatherQueue.getActiveCount(),
@@ -203,8 +182,6 @@ export class JobService {
       newsQueue: { waiting: nWaiting, active: nActive },
     }
   }
-
-  // ── Cleanup ───────────────────────────────────────
 
   async close(): Promise<void> {
     await Promise.all([
