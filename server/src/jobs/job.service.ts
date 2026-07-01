@@ -4,7 +4,6 @@
 // ======================================================
 
 import { Queue, Worker, Job } from 'bullmq'
-import IORedis from 'ioredis'
 import { config } from '../config/index.js'
 import { weatherService } from '../weather/weather.service.js'
 import { newsService } from '../news/news.service.js'
@@ -36,11 +35,15 @@ const PRIORITY_CITIES = [
 
 // ── SAFE Redis Connection (Railway-ready) ─────────────
 
-function createRedisConnection() {
-  return new IORedis(config.redis.url, {
+function createRedisConnection(): import('bullmq').ConnectionOptions {
+  const { host, port, password } = config.redis.parsed
+  return {
+    host,
+    port,
+    password: config.redis.password || password,
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
-  })
+  }
 }
 
 export class JobService {

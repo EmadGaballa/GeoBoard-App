@@ -8,7 +8,7 @@ import cors from 'cors'
 import helmet from 'helmet'
 import cookieParser from 'cookie-parser'
 import rateLimit from 'express-rate-limit'
-import { config, validateConfig } from './config/index.js'
+import { config, validateConfig, logRedisConfig } from './config/index.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
 import { getCache } from './cache/index.js'
 import { jobService } from './jobs/job.service.js'
@@ -150,7 +150,7 @@ async function startServer(): Promise<void> {
 ║  Port:    ${String(config.server.port).padEnd(42)}║
 ║  Env:     ${config.server.nodeEnv.padEnd(42)}║
 ║  Frontend: ${config.server.frontendUrl.padEnd(36)}║
-║  Cache:   ${config.redis.url.padEnd(39)}║
+║  Cache:   ${(config.redis.parsed.host + ':' + config.redis.parsed.port).padEnd(39)}║
 ╚══════════════════════════════════════════════════════╝
       `)
     })
@@ -176,5 +176,8 @@ process.on('SIGINT', async () => {
 })
 
 startServer()
+
+// ── Log parsed Redis config at startup ──────────────
+logRedisConfig()
 
 export default app

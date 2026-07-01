@@ -12,8 +12,12 @@ class CacheService {
   private fallbackMode = false
 
   constructor() {
-    // ✅ FIX: Let ioredis parse the full Redis URL (Railway-safe)
-    this.client = new Redis(config.redis.url, {
+    // Use centralized parsed Redis config (single source of truth)
+    const { host, port, password } = config.redis.parsed
+    this.client = new Redis({
+      host,
+      port,
+      password: config.redis.password || password,
       maxRetriesPerRequest: 3,
       retryStrategy(times) {
         if (times > 3) return null // Stop retrying after 3 attempts

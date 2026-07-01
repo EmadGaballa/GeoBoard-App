@@ -1,5 +1,6 @@
 // ======================================================
-// GEOBOARD — CENTRALIZED CONFIGURATION (FIXED)
+// GEOBOARD — CENTRALIZED CONFIGURATION
+// Single source of truth for all environment variables
 // ======================================================
 
 import dotenv from 'dotenv'
@@ -8,16 +9,6 @@ dotenv.config()
 // ──────────────────────────────────────────────────────
 // Helpers
 // ──────────────────────────────────────────────────────
-
-const required = (key: string, fallback?: string): string => {
-  const value = process.env[key] ?? fallback
-
-  if (!value || value.trim() === '') {
-    return ''
-  }
-
-  return value
-}
 
 const toNumber = (value: string | undefined, fallback: number): number => {
   const parsed = Number(value)
@@ -33,8 +24,56 @@ const isInvalid = (value?: string) =>
   value === 'xxx'
 
 // ──────────────────────────────────────────────────────
+// Redis URL Parsing (Railway-safe, no string hacks)
+// ──────────────────────────────────────────────────────
+
+interface RedisParsed {
+  host: string
+  port: number
+  password: string | undefined
+}
+
+function parseRedisUrl(rawUrl: string): RedisParsed {
+  // Railway provides URLs like:
+  //   redis://default:password@host:port
+  //   redis://:password@host:port
+  //   redis://host:port
+  // The user "default" is a Redis username, NOT a hostname.
+
+  let url: URL
+  try {
+    url = new URL(rawUrl)
+  } catch {
+    throw new Error(
+      `❌ Invalid REDIS_URL: cannot parse "${rawUrl}". Expected format: redis://host:port`,
+    )
+  }
+
+  // If the hostname itself is "default", "localhost", or empty — it's wrong.
+  // Railway uses "default" as username, not host. This catches misparsing.
+  const hostname = url.hostname
+
+  if (!hostname || hostname === 'default' || hostname === '') {
+    throw new Error(
+      `❌ Invalid REDIS_URL: hostname resolved to "${hostname}". ` +
+      `Check that "${rawUrl}" contains a valid Redis host after the @ symbol. ` +
+      `Example: redis://default:password@actual-host:6379`,
+    )
+  }
+
+  return {
+    host: hostname,
+    port: Number(url.port || 6379),
+    password: url.password || undefined,
+  }
+}
+
+// ──────────────────────────────────────────────────────
 // CONFIG
 // ──────────────────────────────────────────────────────
+
+const rawRedisUrl = process.env.REDIS_URL ?? 'redis://localhost:6379'
+const parsedRedis = parseRedisUrl(rawRedisUrl)
 
 export const config = {
   server: {
@@ -50,8 +89,12 @@ export const config = {
   },
 
   redis: {
-    url: process.env.REDIS_URL ?? 'redis://localhost:6379',
+    /** Raw REDIS_URL string (for logging / reference) */
+    url: rawRedisUrl,
+    /** Explicit password override (if set via REDIS_PASSWORD separately) */
     password: process.env.REDIS_PASSWORD || undefined,
+    /** ✅ Safe parsed connection — single source of truth for all Redis clients */
+    parsed: parsedRedis,
   },
 
   jwt: {
@@ -109,4 +152,13 @@ export function validateConfig(): void {
 
     throw new Error(message)
   }
+}
+
+// ──────────────────────────────────────────────────────
+// Startup health log: print Redis config (safe debug)
+// ──────────────────────────────────────────────────────
+
+export function logRedisConfig(): void {
+  const p = config.redis.parsed
+  console.log(`[Config] Redis → host=${p.host}:${p.port} password=${p.password ? '✓ set' : 'none'}`)
 }
