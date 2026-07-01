@@ -1,5 +1,6 @@
 import React from "react";
 import { AVATAR_OPTIONS } from "../constants/avatars";
+import "./AvatarPicker.css";
 
 interface AvatarPickerProps {
   value: string;

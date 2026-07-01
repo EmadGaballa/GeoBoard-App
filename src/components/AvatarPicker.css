@@ -1,0 +1,79 @@
+/* ======================================================
+   AvatarPicker Component
+   ====================================================== */
+
+.avatar-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+/* Grid */
+
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 54px);
+  justify-content: center;
+  gap: 8px;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+/* Avatar Button */
+
+.avatar-option {
+  width: 54px;
+  height: 54px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid transparent;
+  border-radius: 14px;
+
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  padding: 0;
+  overflow: hidden;
+}
+
+.avatar-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(99, 102, 241, 0.35);
+  transform: translateY(-2px);
+}
+
+.avatar-option:focus-visible {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+.avatar-option--selected {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+}
+
+/* Lucide Icons */
+
+.avatar-option svg {
+  width: 28px;
+  height: 28px;
+  stroke-width: 2;
+  color: white;
+  flex-shrink: 0;
+}
+
+/* Small screens */
+
+@media (max-width: 640px) {
+  .avatar-grid {
+    grid-template-columns: repeat(4, 54px);
+  }
+}
