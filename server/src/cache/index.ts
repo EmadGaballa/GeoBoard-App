@@ -12,10 +12,8 @@ class CacheService {
   private fallbackMode = false
 
   constructor() {
-    this.client = new Redis({
-      host: config.redis.url.replace('redis://', '').split(':')[0],
-      port: parseInt(config.redis.url.split(':').pop() || '6379', 10),
-      password: config.redis.password || undefined,
+    // ✅ FIX: Let ioredis parse the full Redis URL (Railway-safe)
+    this.client = new Redis(config.redis.url, {
       maxRetriesPerRequest: 3,
       retryStrategy(times) {
         if (times > 3) return null // Stop retrying after 3 attempts
@@ -97,16 +95,14 @@ class CacheService {
     ttlSeconds: number,
     fetchFn: () => Promise<T>,
   ): Promise<{ data: T; cached: boolean }> {
-    // Try cache first
+
     const cached = await this.get<T>(key)
     if (cached !== null) {
       return { data: cached, cached: true }
     }
 
-    // Cache miss → fetch from origin
     const data = await fetchFn()
 
-    // Store in cache (fire-and-forget)
     this.set(key, data, ttlSeconds).catch(() => {})
 
     return { data, cached: false }
