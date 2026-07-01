@@ -3,7 +3,6 @@
 // ======================================================
 
 import { Request, Response, NextFunction } from "express";
-import { config } from "../config/index.js";
 import { authService } from "./auth.service.js";
 import { emailLoginSchema, registerSchema, updateProfileSchema, forgotPasswordSchema, validateResetTokenSchema, resetPasswordSchema } from "../common/validation.js";
 
@@ -233,8 +232,8 @@ export class AuthController {
   private setTokenCookie(res: Response, token: string): void {
     res.cookie("token", token, {
       httpOnly: true,
-      secure: config.server.nodeEnv === "production",
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
   }
